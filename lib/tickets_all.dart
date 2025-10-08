@@ -12,7 +12,7 @@ class TicketsPage extends StatelessWidget {
       ),
       body: const Center(
         child: Text(
-          'Home Page',
+          'Tickets Page',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ),

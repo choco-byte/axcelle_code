@@ -12,7 +12,7 @@ class MyAccountPage extends StatelessWidget {
       ),
       body: const Center(
         child: Text(
-          'Home Page',
+          'Profile',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ),
