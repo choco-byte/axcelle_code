@@ -69,19 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return Scaffold(
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF7B1113),
-            elevation: 0,
-            centerTitle: false,
-            title: const Text(
-              'Home',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+
           body: Center(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:axcelle_code/theme_service.dart';
 import 'package:axcelle_code/login.dart';
-import 'package:axcelle_code/main.dart'; // supaya navigatorKey dikenali
+import 'package:axcelle_code/main.dart';
 
 class MyAccountPage extends StatefulWidget {
   const MyAccountPage({super.key});
@@ -50,9 +50,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Account'),
-      ),
+  
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -76,7 +74,6 @@ class _MyAccountPageState extends State<MyAccountPage> {
             const Divider(),
             const SizedBox(height: 30),
 
-            // 🔹 Tombol Logout
             Center(
               child: ElevatedButton.icon(
                 onPressed: _logout,

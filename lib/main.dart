@@ -43,7 +43,7 @@ class _MyAppState extends State<MyApp> {
         return MaterialApp(
           title: 'Eclipse',
           debugShowCheckedModeBanner: false,
-          navigatorKey: navigatorKey, // 🔹 penting untuk logout global
+          navigatorKey: navigatorKey,
           theme: isDarkMode ? _buildDarkTheme() : _buildLightTheme(),
           home: FutureBuilder<bool>(
             future: _isLoggedInFuture,
@@ -55,7 +55,7 @@ class _MyAppState extends State<MyApp> {
               }
 
               if (loginSnapshot.data == true) {
-                return Nav(key: const ValueKey('MainNavigatorKey'));
+                return Nav();
               } else {
                 return const LoginScreen();
               }
