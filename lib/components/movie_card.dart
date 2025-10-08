@@ -18,9 +18,8 @@ class MovieCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    // Lebar dan tinggi card disesuaikan dengan ukuran layar
-    final cardWidth = size.width * 0.45; // sekitar 45% lebar layar
-    final cardHeight = size.height * 0.35; // sekitar 35% tinggi layar
+    final cardWidth = size.width * 0.45;
+    final cardHeight = size.height * 0.35;
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 300),
@@ -61,7 +60,7 @@ class MovieCard extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: size.width * 0.04, // responsive font size
+                fontSize: size.width * 0.04,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -70,8 +69,4 @@ class MovieCard extends StatelessWidget {
       ),
     );
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> d5071dd26721c47f3da782595ecfd7648e96b0e9

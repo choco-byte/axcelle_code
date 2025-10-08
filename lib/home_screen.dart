@@ -11,7 +11,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Stream untuk koneksi internet
   late Stream<List<ConnectivityResult>> _connectivityStream;
 
   // Carousel controller & timer
@@ -31,16 +30,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Stream koneksi
     _connectivityStream = Connectivity().onConnectivityChanged;
 
-    // PageController untuk carousel
     _pageController = PageController(
       initialPage: _initialPage,
       viewportFraction: 0.6,
     );
 
-    // Timer otomatis untuk geser slide
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (_pageController.hasClients) {
         _pageController.nextPage(
