@@ -4,13 +4,15 @@ import 'package:axcelle_code/tickets_all.dart';
 import 'package:flutter/material.dart';
 
 class Nav extends StatefulWidget {
+  const Nav({super.key});
+
   @override
   _NavState createState() => _NavState();
 }
 
 class _NavState extends State<Nav> {
   int _selectedIndex = 0;
-  List<Widget> _widgetOptions = <Widget>[
+  final List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
     TicketsPage(),
     MyAccountPage(),
