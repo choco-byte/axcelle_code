@@ -7,8 +7,8 @@ class MyAccountPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
-        backgroundColor: const Color(0xFF7B1113), // warna merah gelapmu
+        title: const Text('Profile'),
+        backgroundColor: const Color(0xFF7B1113),
       ),
       body: const Center(
         child: Text(
