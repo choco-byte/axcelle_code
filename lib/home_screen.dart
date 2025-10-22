@@ -5,38 +5,40 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:axcelle_code/components/movie_card.dart';
- 
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
- 
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
- 
+
 class _HomeScreenState extends State<HomeScreen> {
   late Stream<List<ConnectivityResult>> _connectivityStream;
   late final PageController _pageController;
   late Timer _timer;
- 
+
   // 🔹 Data dari API TMDB
   List<Map<String, dynamic>> _nowPlayingMovies = [];
- 
+
   // 🔹 State tambahan
   bool _isLoading = true;
   bool _hasError = false;
- 
+
   // 🔹 Pencarian
   final TextEditingController _searchController = TextEditingController();
   List<String> _searchHistory = [];
   List<Map<String, dynamic>> _searchResults = [];
- 
+
   @override
   void initState() {
     super.initState();
     _connectivityStream = Connectivity().onConnectivityChanged;
- 
     _pageController = PageController(viewportFraction: 0.6);
- 
+    _loadSearchHistory();
+    _fetchNowPlayingMovies();
+
+    // 🔁 Auto-slide setiap 3 detik
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (_pageController.hasClients && _nowPlayingMovies.isNotEmpty) {
         int nextPage = _pageController.page!.toInt() + 1;
@@ -48,38 +50,31 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     });
- 
-    _loadSearchHistory();
-    _fetchNowPlayingMovies();
   }
- 
-  // 🧠 Ambil data dari API TMDB
+
+  // 🧠 Fetch data dari TMDB
   Future<void> _fetchNowPlayingMovies() async {
-    const apiKey = '6c53df6acacc8783afa96e6d4bfda42f'; // 🔑 Ganti dengan API key TMDB kamu
+    const apiKey = '6c53df6acacc8783afa96e6d4bfda42f'; // Ganti dgn API key kamu
     final url =
         'https://api.themoviedb.org/3/movie/now_playing?api_key=$apiKey&language=en-US&page=1';
- 
+
     setState(() {
       _isLoading = true;
       _hasError = false;
     });
- 
+
     try {
       final response = await http.get(Uri.parse(url));
- 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final results = List<Map<String, dynamic>>.from(data['results']);
- 
+
         setState(() {
           _nowPlayingMovies = results;
-          _searchResults = [];
           _isLoading = false;
         });
- 
-        debugPrint('✅ Data berhasil diambil: ${results.length} film');
+        debugPrint('✅ Berhasil fetch ${results.length} film.');
       } else {
-        debugPrint('❌ Gagal fetch data. Status: ${response.statusCode}');
         setState(() {
           _hasError = true;
           _isLoading = false;
@@ -93,20 +88,38 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
   }
- 
-  // 🧠 History pencarian
+
+  // 🔍 Pencarian
+  void _performSearch(String query) {
+    _addToHistory(query);
+    setState(() {
+      _searchResults = _nowPlayingMovies
+          .where((movie) => (movie['title'] ?? '')
+              .toLowerCase()
+              .contains(query.toLowerCase()))
+          .map((movie) => {
+                'title': movie['title'] ?? 'No Title',
+                'image': (movie['poster_path'] != null)
+                    ? 'https://image.tmdb.org/t/p/w500${movie['poster_path']}'
+                    : 'https://via.placeholder.com/500x750?text=No+Image',
+              })
+          .toList();
+    });
+  }
+
+  // 🕓 Search history
   Future<void> _loadSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _searchHistory = prefs.getStringList('searchHistory') ?? [];
     });
   }
- 
+
   Future<void> _saveSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList('searchHistory', _searchHistory);
   }
- 
+
   void _addToHistory(String query) {
     if (query.isEmpty) return;
     if (!_searchHistory.contains(query)) {
@@ -116,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _saveSearchHistory();
     }
   }
- 
+
   Future<void> _clearHistory() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('searchHistory');
@@ -124,24 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _searchHistory.clear();
     });
   }
- 
-  // 🧠 Fungsi pencarian film dari data yang di-fetch
-  void _performSearch(String query) {
-    _addToHistory(query);
-    setState(() {
-      _searchResults = _nowPlayingMovies
-          .where((movie) => (movie['title'] ?? '')
-              .toLowerCase()
-              .contains(query.toLowerCase()))
-          .map((movie) => {
-                'title': (movie['title'] ?? 'No Title').toString(),
-                'image':
-                    'https://image.tmdb.org/t/p/w500${movie['poster_path'] ?? ''}',
-              })
-          .toList();
-    });
-  }
- 
+
   @override
   void dispose() {
     _timer.cancel();
@@ -149,11 +145,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _searchController.dispose();
     super.dispose();
   }
- 
+
+  // 🧱 UI utama
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
- 
     return StreamBuilder<List<ConnectivityResult>>(
       stream: _connectivityStream,
       builder: (context, snapshot) {
@@ -162,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
           isOnline =
               snapshot.data!.any((result) => result != ConnectivityResult.none);
         }
- 
+
         return Scaffold(
           appBar: AppBar(
             backgroundColor: const Color(0xFF7B1113),
@@ -177,14 +173,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white,),
+                icon: const Icon(Icons.refresh, color: Colors.white),
                 tooltip: 'Refresh',
                 onPressed: _fetchNowPlayingMovies,
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.white),
-                onPressed: _clearHistory,
                 tooltip: 'Clear History',
+                onPressed: _clearHistory,
               ),
             ],
           ),
@@ -205,10 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   : _isLoading
                       ? const CircularProgressIndicator()
                       : _hasError
-                          ? const Text(
-                              'Failed to load movies 😢',
-                              style: TextStyle(fontSize: 20),
-                            )
+                          ? const Text('Failed to load movies 😢')
                           : _buildContent(size),
             ),
           ),
@@ -216,8 +209,8 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
- 
-  // 🎬 UI konten utama
+
+  // 🎬 Konten utama halaman
   Widget _buildContent(Size size) {
     return Padding(
       key: const ValueKey('online'),
@@ -226,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔍 Search Bar
+            // 🔍 Search bar
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -243,8 +236,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onSubmitted: _performSearch,
             ),
             const SizedBox(height: 16),
- 
-            // 🕓 Search History
+
+            // 🔹 Search history
             if (_searchHistory.isNotEmpty)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,8 +264,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 16),
                 ],
               ),
- 
-            // 🎬 Search Results / Now Playing
+
+            // 🔹 Search results atau now playing
             if (_searchResults.isNotEmpty)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,35 +301,32 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
                     ),
                   ),
-                  SizedBox(height: size.height * 0.01),
-                  if (_nowPlayingMovies.isEmpty)
-                    const Text('No movies found 😢')
-                  else
-                    SizedBox(
-                      height: size.height * 0.45,
-                      child: PageView.builder(
-                        controller: _pageController,
-                        itemCount: _nowPlayingMovies.length,
-                        itemBuilder: (context, index) {
-                          final movie = _nowPlayingMovies[index];
-                          final title = movie['title'] ?? 'No Title';
-                          final imageUrl =
-                              'https://image.tmdb.org/t/p/w500${movie['poster_path'] ?? ''}';
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: MovieCard(
-                              title: title,
-                              image: imageUrl,
-                              scale: 1.0,
-                              opacity: 1.0,
-                            ),
-                          );
-                        },
-                      ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: size.height * 0.45,
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: _nowPlayingMovies.length,
+                      itemBuilder: (context, index) {
+                        final movie = _nowPlayingMovies[index];
+                        final title = movie['title'] ?? 'No Title';
+                        final imageUrl = (movie['poster_path'] != null)
+                            ? 'https://image.tmdb.org/t/p/w500${movie['poster_path']}'
+                            : 'https://via.placeholder.com/500x750?text=No+Image';
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: MovieCard(
+                            title: title,
+                            image: imageUrl,
+                            scale: 1.0,
+                            opacity: 1.0,
+                          ),
+                        );
+                      },
                     ),
+                  ),
                 ],
               ),
           ],
