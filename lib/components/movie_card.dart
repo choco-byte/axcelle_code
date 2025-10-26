@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class MovieCard extends StatelessWidget {
   final String title;
-  final String image;
+  final String image; // bisa path lokal atau URL
   final double scale;
   final double opacity;
 
@@ -13,6 +13,10 @@ class MovieCard extends StatelessWidget {
     required this.scale,
     required this.opacity,
   });
+
+  bool get isNetworkImage {
+    return image.startsWith('http://') || image.startsWith('https://');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,16 +47,37 @@ class MovieCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Image.asset(
-                  image,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.broken_image, size: 60),
-                    );
-                  },
-                ),
+                // 🧩 Deteksi otomatis apakah gambar lokal atau dari internet
+                child: isNetworkImage
+                    ? Image.network(
+                        image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.broken_image, size: 60),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.black12,
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
+                      )
+                    : Image.asset(
+                        image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.broken_image, size: 60),
+                          );
+                        },
+                      ),
               ),
             ),
             const SizedBox(height: 8),
