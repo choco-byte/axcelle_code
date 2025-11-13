@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:axcelle_code/components/movie_card.dart';
 import 'package:axcelle_code/all_movies.dart';
+import 'package:axcelle_code/movie_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,12 +23,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Map<String, dynamic>> _nowPlayingMovies = [];
 
-  final List<Map<String, String?>> _localMovies = [
-    {'title': 'Ne Zha 2', 'image': 'assets/nezha_poster.jpeg'},
-    {'title': 'Lilo & Stitch', 'image': 'assets/lilo.jpg'},
-    {'title': 'Superman', 'image': 'assets/superman.jpg'},
-    {'title': 'Scream VI', 'image': 'assets/scream.jpg'},
-    {'title': 'Elio', 'image': 'assets/ELIO (2025).jpg'},
+  final List<Map<String, dynamic>> _localMovies = [
+    {'id': 1, 'title': 'Ne Zha 2', 'image': 'assets/nezha_poster.jpeg', 'overview': 'A synopsis of Ne Zha 2.', 'isLocal': true, 'vote_average': 7.5},
+    {'id': 2, 'title': 'Lilo & Stitch', 'image': 'assets/lilo.jpg', 'overview': 'A synopsis of Lilo & Stitch.', 'isLocal': true, 'vote_average': 7.8},
+    {'id': 3, 'title': 'Superman', 'image': 'assets/superman.jpg', 'overview': 'A synopsis of Superman.', 'isLocal': true, 'vote_average': 8.0},
+    {'id': 4, 'title': 'Scream VI', 'image': 'assets/scream.jpg', 'overview': 'A synopsis of Scream VI.', 'isLocal': true, 'vote_average': 6.8},
+    {'id': 5, 'title': 'Elio', 'image': 'assets/ELIO (2025).jpg', 'overview': 'A synopsis of Elio.', 'isLocal': true, 'vote_average': 7.2},
   ];
 
   bool _isLoading = true;
@@ -79,27 +80,61 @@ class _HomeScreenState extends State<HomeScreen> {
           _nowPlayingMovies = results;
           _isLoading = false;
         });
-
-        debugPrint('✅ Data successfully fetched: ${results.length} movies');
       } else {
-        debugPrint('❌ Failed to fetch data. Status: ${response.statusCode}');
         setState(() {
           _hasError = true;
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('❌ Error fetching movies: $e');
       setState(() {
         _hasError = true;
         _isLoading = false;
       });
     }
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+  }
+
+  void _performSearch(String query) {
+    final cleanQuery = query.trim();
+    if (cleanQuery.isNotEmpty) {
+      _addToHistory(cleanQuery);
     }
+
+    final List<Map<String, dynamic>> searchSource = [];
+    
+    if (_nowPlayingMovies.isNotEmpty) {
+      searchSource.addAll(_nowPlayingMovies);
+    } 
+    searchSource.addAll(_localMovies);
+
+    final Set<String> uniqueTitles = {};
+    final List<Map<String, dynamic>> finalResults = [];
+
+    final filtered = searchSource
+        .where((movie) =>
+            (movie['title'] ?? '').toLowerCase().contains(cleanQuery.toLowerCase()))
+        .toList();
+
+    for (var movie in filtered) {
+        final title = movie['title'] as String;
+        if (!uniqueTitles.contains(title)) {
+            uniqueTitles.add(title);
+            
+            final String imagePath = (movie['poster_path'] != null)
+                ? 'https://image.tmdb.org/t/p/w500${movie['poster_path']}'
+                : (movie['image'] ?? 'https://via.placeholder.com/500x750?text=No+Image');
+            
+            finalResults.add(Map<String, dynamic>.from(movie)..['image'] = imagePath);
+        }
+    }
+
+    setState(() {
+      if (cleanQuery.isEmpty) {
+        _searchResults = [];
+      } else {
+        _searchResults = finalResults;
+      }
+    });
   }
 
   Future<void> _loadSearchHistory() async {
@@ -115,10 +150,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _addToHistory(String query) {
-    if (query.isEmpty) return;
+    final cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) return;
+
     setState(() {
-      _searchHistory.remove(query);
-      _searchHistory.insert(0, query);
+      _searchHistory.remove(cleanQuery); 
+      _searchHistory.insert(0, cleanQuery); 
+      if (_searchHistory.length > 10) { 
+        _searchHistory.removeLast();
+      }
     });
     _saveSearchHistory();
   }
@@ -131,40 +171,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _performSearch(String query) {
-    _addToHistory(query);
-
-    final List<Map<String, dynamic>> searchSource;
-    if (_nowPlayingMovies.isNotEmpty) {
-      searchSource = _nowPlayingMovies
-          .map((movie) => {
-                'title': movie['title'] ?? 'No Title',
-                'image': (movie['poster_path'] != null)
-                    ? 'https://image.tmdb.org/t/p/w500${movie['poster_path']}'
-                    : 'https://via.placeholder.com/500x750?text=No+Image',
-                'isLocal': false,
-              })
-          .toList();
-    } else {
-      searchSource = _localMovies
-          .map((movie) => {
-                'title': movie['title'] ?? 'No Title',
-                'image': movie['image']!,
-                'isLocal': true,
-              })
-          .toList();
-    }
-
-    setState(() {
-      if (query.isEmpty) {
-        _searchResults = [];
-      } else {
-        _searchResults = searchSource
-            .where((movie) =>
-                (movie['title'] ?? '').toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
-    });
+  void _handleMovieTap(Map<String, dynamic> movieData) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MovieDetailScreen(movie: movieData),
+      ),
+    );
   }
 
   @override
@@ -175,6 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  // MARK: - UI Builder Components
   Widget _buildSectionHeader(String title) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -187,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => MovieTabsPage()),
+              MaterialPageRoute(builder: (context) => MovieTabsPage()), 
             );
           },
           child: const Text(
@@ -205,7 +219,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSharedLayout(Size size, List<dynamic> movies) {
     final isSearching = _searchController.text.isNotEmpty;
-    final displayMovies = isSearching ? _searchResults : movies;
 
     return SingleChildScrollView(
       key: const ValueKey('content'),
@@ -228,9 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               onSubmitted: _performSearch,
-              onChanged: (value) {
-                _performSearch(value);
-              },
+              onChanged: _performSearch, 
             ),
           ),
           const SizedBox(height: 16),
@@ -257,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           "Clear",
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: Theme.of(context).textTheme.bodySmall?.color,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -299,16 +310,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (_searchResults.isEmpty)
                     const Text('No results found.', style: TextStyle(fontSize: 16))
                   else
-                    ..._searchResults
-                        .map(
-                          (movie) => MovieCard(
-                            title: movie['title'] ?? 'No Title',
-                            image: movie['image'] ?? '',
-                            scale: 1.0,
-                            opacity: 1.0,
-                          ),
-                        )
-                        .toList(),
+                    GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2, 
+                        childAspectRatio: 0.6, 
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemCount: _searchResults.length,
+                      itemBuilder: (context, index) {
+                        final movie = _searchResults[index]; // Tipe sudah Map<String, dynamic>
+                        return MovieCard(
+                          title: movie['title'] ?? 'No Title',
+                          image: movie['image'] ?? '', // Path gambar yang sudah dinormalisasi
+                          scale: 1.0,
+                          opacity: 1.0,
+                          onTap: () => _handleMovieTap(movie), // PASSING DATA FIX
+                        );
+                      },
+                    ),
                   const SizedBox(height: 16),
                 ],
               ),
@@ -352,7 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       controller: _pageController,
                       itemCount: movies.length,
                       itemBuilder: (context, index) {
-                        final movie = movies[index];
+                        final movie = movies[index] as Map<String, dynamic>; 
                         final title = movie['title'] ?? 'No Title';
 
                         final image = (movie['poster_path'] != null)
@@ -366,6 +388,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             image: image,
                             scale: 1.0,
                             opacity: 1.0,
+                            onTap: () => _handleMovieTap(movie), // PASSING DATA FIX
                           ),
                         );
                       },
@@ -377,31 +400,21 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
+  
   Widget _getAnimatedBodyContent(Size size, bool isOnline) {
-    if (!isOnline) {
-      return Text(
-        'Oops, no internet connection',
-        key: const ValueKey('offline'),
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Colors.redAccent[400],
-        ),
-        textAlign: TextAlign.center,
-      );
-    }
-
-    if (_nowPlayingMovies.isNotEmpty) {
-      return _buildSharedLayout(size, _nowPlayingMovies);
-    }
-
-    if (_localMovies.isNotEmpty) {
-      return _buildSharedLayout(size, _localMovies);
-    }
+    final List<dynamic> displayMovies = 
+        (_nowPlayingMovies.isNotEmpty || isOnline) ? _nowPlayingMovies : _localMovies;
 
     if (_isLoading) {
       return const CircularProgressIndicator(key: ValueKey('loading'));
+    }
+
+    if (!isOnline && _nowPlayingMovies.isEmpty && _localMovies.isNotEmpty) {
+       return _buildSharedLayout(size, _localMovies);
+    }
+    
+    if (displayMovies.isNotEmpty) {
+      return _buildSharedLayout(size, displayMovies);
     }
 
     return const Text(
@@ -422,7 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            backgroundColor: const Color(0xFF7B1113),
+            backgroundColor: Theme.of(context).appBarTheme.backgroundColor, 
             elevation: 0,
             title: const Text(
               'Home',
@@ -446,10 +459,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           body: Center(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _getAnimatedBodyContent(size, isOnline), 
-            ),
+             child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: _getAnimatedBodyContent(size, isOnline),
+             ),
           ),
         );
       },
