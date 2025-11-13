@@ -3,14 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// ****************
-// MOCK API CONFIGURATION
-// ****************
 const String _apiBaseUrl = 'https://api.mockcinema.com';
 const String _ticketHistoryEndpoint = '/tickets/history';
 const String _mockPersistenceKey = 'mock_api_tickets_history';
 
-// Data tiket awal untuk simulasi jika belum ada data di 'server'
 final List<Map<String, dynamic>> _initialMockTickets = [
   {'id': 1, 'title': 'Black Panther: Wakanda Forever', 'date': '2025-11-15', 'seats': 'A1, A2'},
   {'id': 2, 'title': 'Avatar: The Way of Water', 'date': '2025-10-20', 'seats': 'H5, H6, H7'},
@@ -35,7 +31,6 @@ class _TicketsPageState extends State<TicketsPage> {
     _fetchTickets();
   }
 
-  // Fungsi untuk memuat data tiket
   Future<void> _fetchTickets() async {
     setState(() {
       _isLoading = true;
@@ -43,7 +38,7 @@ class _TicketsPageState extends State<TicketsPage> {
     });
 
     try {
-      await Future.delayed(const Duration(milliseconds: 800)); // simulasi delay
+      await Future.delayed(const Duration(milliseconds: 800)); 
       final prefs = await SharedPreferences.getInstance();
       final ticketsJson = prefs.getString(_mockPersistenceKey);
 
@@ -58,7 +53,7 @@ class _TicketsPageState extends State<TicketsPage> {
         final List<dynamic> decodedList = json.decode(response.body);
         _ticketHistory = decodedList.cast<Map<String, dynamic>>();
       } else {
-        throw Exception('Gagal memuat tiket.');
+        throw Exception('Failed to load the ticket.');
       }
     } catch (e) {
       if (mounted) {
@@ -71,12 +66,10 @@ class _TicketsPageState extends State<TicketsPage> {
     }
   }
 
-  // Fungsi hapus riwayat tiket
   Future<void> _clearHistory() async {
-    // Jika kosong, langsung beri pesan
     if (_ticketHistory.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tidak ada riwayat untuk dihapus.')),
+        const SnackBar(content: Text('There is no history to delete.')),
       );
       return;
     }
@@ -92,27 +85,25 @@ class _TicketsPageState extends State<TicketsPage> {
       if (response.statusCode == 204) {
         setState(() => _ticketHistory = []);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Riwayat tiket berhasil dihapus!')),
+          const SnackBar(content: Text('Ticket history successfully deleted!')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menghapus riwayat: $e')),
+        SnackBar(content: Text('Failed to delete history: $e')),
       );
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
-  // Fungsi pulihkan riwayat
   Future<void> _restoreHistory() async {
     setState(() => _isLoading = true);
 
     try {
-      await Future.delayed(const Duration(milliseconds: 1000)); // simulasi delay
+      await Future.delayed(const Duration(milliseconds: 1000));
       final prefs = await SharedPreferences.getInstance();
 
-      // Simulasi HTTP POST ke server untuk restore data
       await prefs.setString(_mockPersistenceKey, json.encode(_initialMockTickets));
 
       final response = http.Response(json.encode(_initialMockTickets), 200);
@@ -121,12 +112,12 @@ class _TicketsPageState extends State<TicketsPage> {
           _ticketHistory = List<Map<String, dynamic>>.from(_initialMockTickets);
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Riwayat tiket berhasil dipulihkan!')),
+          const SnackBar(content: Text('Ticket history successfully restored!')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memulihkan riwayat: $e')),
+        SnackBar(content: Text('Failed to restore history: $e')),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -137,17 +128,17 @@ class _TicketsPageState extends State<TicketsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Riwayat Tiket?'),
-        content: const Text('Apakah Anda yakin ingin menghapus semua riwayat tiket?'),
+        title: const Text('Delete Ticket History?'),
+        content: const Text('Are you sure you want to delete all ticket history?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _clearHistory();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Hapus'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -166,15 +157,14 @@ class _TicketsPageState extends State<TicketsPage> {
           children: [
             const Icon(Icons.error_outline, size: 80, color: Colors.redAccent),
             const SizedBox(height: 16),
-            const Text('Gagal memuat riwayat tiket.'),
-            ElevatedButton(onPressed: _fetchTickets, child: const Text('Coba Lagi')),
+            const Text('Failed to load ticket history.'),
+            ElevatedButton(onPressed: _fetchTickets, child: const Text('Try Again')),
           ],
         ),
       );
     }
 
     if (_ticketHistory.isEmpty) {
-      // Jika kosong, tampilkan tombol "Pulihkan Riwayat"
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -182,14 +172,14 @@ class _TicketsPageState extends State<TicketsPage> {
             const Icon(Icons.movie_outlined, size: 80, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              'Tidak ada riwayat tiket.',
+              'No ticket history available.',
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: _restoreHistory,
               icon: const Icon(Icons.restore),
-              label: const Text('Pulihkan Riwayat'),
+              label: const Text('Restore History'),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
             ),
           ],
@@ -224,7 +214,7 @@ class _TicketsPageState extends State<TicketsPage> {
                   children: [
                     const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                     const SizedBox(width: 8),
-                    Text('Tanggal: ${ticket['date']}'),
+                    Text('Date: ${ticket['date']}'),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -232,7 +222,7 @@ class _TicketsPageState extends State<TicketsPage> {
                   children: [
                     const Icon(Icons.event_seat, size: 16, color: Colors.grey),
                     const SizedBox(width: 8),
-                    Text('Kursi: ${ticket['seats']}'),
+                    Text('Seats: ${ticket['seats']}'),
                   ],
                 ),
               ],
@@ -247,14 +237,14 @@ class _TicketsPageState extends State<TicketsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat Tiket'),
+        title: const Text('Ticket History'),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
           if (!_isLoading)
             IconButton(
               icon: const Icon(Icons.delete_outline),
-              tooltip: 'Hapus Semua Riwayat',
+              tooltip: 'Delete All History',
               onPressed: _confirmClearHistory,
             ),
         ],
