@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:axcelle_code/movie_detail_screen.dart'; 
 
-// 1. API Key Placeholder
-// IMPORTANT: Replace 'YOUR_TMDB_API_KEY_HERE' with your actual TMDB API key for data to load.
 const String _tmdbApiKey = '6c53df6acacc8783afa96e6d4bfda42f';
 const String _baseImageUrl = 'https://image.tmdb.org/t/p/w500';
 
-// 2. Placeholder for the MovieCard1 component (assuming it was a standalone component)
 class MovieCard1 extends StatelessWidget {
   final String image;
   final String title;
   final String agerate;
   final bool showStars;
   final double rating;
+  final VoidCallback onTap; 
 
   const MovieCard1({
     super.key,
@@ -22,113 +21,101 @@ class MovieCard1 extends StatelessWidget {
     required this.agerate,
     required this.showStars,
     required this.rating,
+    required this.onTap, 
   });
 
   @override
   Widget build(BuildContext context) {
-    // Determine if the image is a network URL or a placeholder asset
     final isNetworkImage = image.startsWith('http');
-    // Calculate 5-star rating (TMDB is 10-star, converted to 5)
-    final clampedRating = (rating / 5.0 * 5.0).clamp(0.0, 5.0);
-    
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 160),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Movie Poster/Image
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: isNetworkImage && image.isNotEmpty
-                  ? Image.network(
-                      image,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Container(
-                        color: Colors.grey.shade300,
+    final clampedRating = (rating / 2.0).clamp(0.0, 5.0); 
+
+    return GestureDetector(
+      onTap: onTap, 
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 160),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: isNetworkImage && image.isNotEmpty
+                    ? Image.network(
+                        image,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Container(
+                          color: Colors.grey.shade300,
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.broken_image, color: Colors.grey),
+                        ),
+                      )
+                    : Container(
+                        color: const Color(0xFF7B1113).withOpacity(0.1),
                         alignment: Alignment.center,
-                        child: const Icon(Icons.broken_image, color: Colors.grey),
+                        child: Text(
+                          'No Poster',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
                       ),
-                    )
-                  : Container(
-                      // Placeholder for missing image
-                      color: Color(0xFF7B1113).withOpacity(0.1),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'No Poster',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                      ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 4),
+
+            Row(
+              children: [
+                if (showStars && rating > 0) ...[
+                  Row(
+                    children: List.generate(5, (index) {
+                      return Icon(
+                        index < clampedRating.floor()
+                            ? Icons.star
+                            : index < clampedRating
+                                ? Icons.star_half
+                                : Icons.star_border,
+                        color: Colors.amber,
+                        size: 14,
+                      );
+                    }),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7B1113),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    agerate,
+                    style: const TextStyle(
+                      fontSize: 10,  
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Title
-          Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // Rating & Age Rate
-          Row(
-            children: [
-              if (showStars && rating > 0) ...[
-                // Displaying star rating
-                Row(
-                  children: List.generate(5, (index) {
-                    return Icon(
-                      index < clampedRating.floor()
-                          ? Icons.star
-                          : index < clampedRating
-                              ? Icons.star_half
-                              : Icons.star_border,
-                      color: Colors.amber,
-                      size: 14,
-                    );
-                  }),
-                ),
-                const SizedBox(width: 8),
-              ],
-              
-              // Age Rating/Certification
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Color(0xFF7B1113),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  agerate,
-                  style: const TextStyle(
-                    fontSize: 10, 
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
-}
-
-// 3. Main and Movie Model (from Code 1)
-void main() {
-  runApp(const MaterialApp(
-    home: MovieTabsPage(),
-    debugShowCheckedModeBanner: false,
-  ));
 }
 
 class Movie {
@@ -139,42 +126,47 @@ class Movie {
   Movie(this.title, this.imageUrl, this.rating);
 }
 
-// 4. Main Tabs Page
 class MovieTabsPage extends StatelessWidget {
   const MovieTabsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final primaryColor = colorScheme.primary;
+    final surfaceColor = colorScheme.surface; 
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           centerTitle: true,
-          title: const Text(
+          title: Text(
             'Movies',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          backgroundColor: const Color(0xFF7B1113),
           elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
         body: Column(
           children: [
             Container(
-              color: Colors.white,
-              child: const TabBar(
-                labelColor: Color(0xFF7B1113),
+              color: surfaceColor,
+              child: TabBar(
+                labelColor: primaryColor,
                 unselectedLabelColor: Colors.grey,
-                indicatorColor: Color(0xFF7B1113),
-                labelStyle: TextStyle(fontWeight: FontWeight.bold),
-                tabs: [
+                indicatorColor: primaryColor,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                tabs: const [
                   Tab(text: 'Now Showing'),
                   Tab(text: 'Coming Soon'),
                 ],
               ),
             ),
-            const Divider(height: 0, color: Colors.white),
+            Divider(height: 0, color: Theme.of(context).scaffoldBackgroundColor),
             Expanded(
               child: TabBarView(
                 children: [
@@ -190,7 +182,6 @@ class MovieTabsPage extends StatelessWidget {
   }
 }
 
-// 5. Now Showing Movies (using dynamic API fetching from Code 2)
 class NowShowingMovies extends StatefulWidget {
   const NowShowingMovies({super.key});
 
@@ -209,7 +200,15 @@ class _NowShowingMoviesState extends State<NowShowingMovies> {
     _fetchNowPlayingMovies();
   }
 
-  // Utility function to fetch age rating
+  void _handleMovieTap(Map<String, dynamic> movieData) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MovieDetailScreen(movie: movieData),
+      ),
+    );
+  }
+
   Future<String> _fetchAgeRating(int movieId, String apiKey) async {
     final url =
         'https://api.themoviedb.org/3/movie/$movieId/release_dates?api_key=$apiKey';
@@ -270,7 +269,6 @@ class _NowShowingMoviesState extends State<NowShowingMovies> {
         final results = List<Map<String, dynamic>>.from(data['results']);
 
         List<Map<String, dynamic>> moviesWithRating = [];
-        // Only fetch ratings for the first 10 movies to avoid excessive API calls
         for (var movie in results.take(10)) { 
           final movieId = movie['id'] as int;
           final ageRating = await _fetchAgeRating(movieId, _tmdbApiKey);
@@ -305,10 +303,13 @@ class _NowShowingMoviesState extends State<NowShowingMovies> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF7B1113)));
+      return Center(child: CircularProgressIndicator(color: primaryColor));
     }
 
     if (_hasError) {
@@ -318,10 +319,10 @@ class _NowShowingMoviesState extends State<NowShowingMovies> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Color(0xFF7B1113)),
+              Icon(Icons.error_outline, size: 48, color: primaryColor),
               const SizedBox(height: 16),
               const Text(
-                'Gagal memuat film yang sedang tayang.', 
+                'Gagal memuat film yang sedang tayang.',  
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
@@ -358,7 +359,6 @@ class _NowShowingMoviesState extends State<NowShowingMovies> {
           final agerate = movie['certification'] ?? 'N/A';
           final posterPath = movie['poster_path'];
           
-          // TMDB rating is out of 10. We use it directly in MovieCard1 logic.
           final double tmdbRating = (movie['vote_average'] as num?)?.toDouble() ?? 0.0; 
 
           return MovieCard1(
@@ -367,6 +367,7 @@ class _NowShowingMoviesState extends State<NowShowingMovies> {
             agerate: agerate,
             showStars: true,
             rating: tmdbRating,
+            onTap: () => _handleMovieTap(movie), 
           );
         },
       ),
@@ -374,7 +375,6 @@ class _NowShowingMoviesState extends State<NowShowingMovies> {
   }
 }
 
-// 6. Coming Soon Movies (using dynamic API fetching from Code 2)
 class ComingSoonMovies extends StatefulWidget {
   const ComingSoonMovies({super.key});
 
@@ -393,7 +393,15 @@ class _ComingSoonMoviesState extends State<ComingSoonMovies> {
     _fetchUpcomingMovies();
   }
 
-  // Utility function to fetch age rating
+  void _handleMovieTap(Map<String, dynamic> movieData) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MovieDetailScreen(movie: movieData),
+      ),
+    );
+  }
+
   Future<String> _fetchAgeRating(int movieId, String apiKey) async {
     final url =
         'https://api.themoviedb.org/3/movie/$movieId/release_dates?api_key=$apiKey';
@@ -455,7 +463,6 @@ class _ComingSoonMoviesState extends State<ComingSoonMovies> {
         final results = List<Map<String, dynamic>>.from(data['results']);
 
         List<Map<String, dynamic>> moviesWithRating = [];
-        // Only fetch ratings for the first 10 movies to avoid excessive API calls
         for (var movie in results.take(10)) {
           final movieId = movie['id'] as int;
           final ageRating = await _fetchAgeRating(movieId, _tmdbApiKey);
@@ -492,8 +499,9 @@ class _ComingSoonMoviesState extends State<ComingSoonMovies> {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF7B1113)));
+      return Center(child: CircularProgressIndicator(color: primaryColor));
     }
 
     if (_hasError) {
@@ -503,10 +511,10 @@ class _ComingSoonMoviesState extends State<ComingSoonMovies> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Color(0xFF7B1113)),
+              Icon(Icons.error_outline, size: 48, color: primaryColor),
               const SizedBox(height: 16),
               const Text(
-                'Gagal memuat film yang akan datang.', 
+                'Gagal memuat film yang akan datang.',  
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
@@ -540,16 +548,18 @@ class _ComingSoonMoviesState extends State<ComingSoonMovies> {
         itemCount: _movies.length,
         itemBuilder: (context, index) {
           final movie = _movies[index];
-          // For upcoming movies, use release year as a fallback for the age rate display
-          final agerate = movie['certification'] ?? movie['release_date']?.toString().split('-')[0] ?? 'TBA'; 
+          final agerate = movie['certification'] ?? 'N/A';
           final posterPath = movie['poster_path'];
+          
+          final double tmdbRating = (movie['vote_average'] as num?)?.toDouble() ?? 0.0; 
 
           return MovieCard1(
             image: posterPath != null ? '$_baseImageUrl$posterPath' : '',
             title: movie['title'] ?? 'No Title',
             agerate: agerate,
-            showStars: false, // Don't show stars for coming soon movies
-            rating: 0.0,
+            showStars: true,
+            rating: tmdbRating,
+            onTap: () => _handleMovieTap(movie), 
           );
         },
       ),

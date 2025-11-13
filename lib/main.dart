@@ -140,8 +140,6 @@ ThemeData _buildDarkTheme() {
       }),
       checkColor: WidgetStateProperty.all(Colors.white),
     ),
-    cardTheme: const CardThemeData(
-      color: darkSurface,
-    ),
+    cardTheme: const CardThemeData(color: darkSurface),
   );
 }

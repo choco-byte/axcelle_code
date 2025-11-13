@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:axcelle_code/theme_service.dart';
 import 'package:axcelle_code/login.dart';
 import 'package:axcelle_code/main.dart';
+import 'package:axcelle_code/watchlist_screen.dart';
 
 class MyAccountPage extends StatefulWidget {
   const MyAccountPage({super.key});
@@ -50,7 +51,6 @@ class _MyAccountPageState extends State<MyAccountPage> {
     }
 
     return Scaffold(
-  
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -72,8 +72,28 @@ class _MyAccountPageState extends State<MyAccountPage> {
               },
             ),
             const Divider(),
-            const SizedBox(height: 30),
 
+            
+
+            ListTile(
+              leading: const Icon(
+                Icons.bookmark_border,
+                color: Colors.blue,
+              ),
+              title: const Text('My Watchlist'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WatchlistScreen(),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+
+            const SizedBox(height: 30),
             Center(
               child: ElevatedButton.icon(
                 onPressed: _logout,
@@ -82,7 +102,10 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
