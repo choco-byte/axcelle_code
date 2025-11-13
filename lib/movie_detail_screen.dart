@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:axcelle_code/services/database_helper.dart'; 
+import 'seat_selection.dart'; // ✅ Import halaman seat selection
 
 class MovieDetailScreen extends StatefulWidget {
   final Map<String, dynamic> movie;
@@ -178,8 +179,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Booking tiket untuk ${widget.movie['title']}!')),
+                  // ✅ Navigasi ke halaman SeatSelectionScreen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SeatSelectionScreen(
+                        movieTitle: widget.movie['title'] ?? 'Film Tanpa Judul',
+                      ),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.confirmation_number_sharp),
