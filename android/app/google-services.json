@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "160360973962",
+    "project_id": "axcelle-6bc89",
+    "storage_bucket": "axcelle-6bc89.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:160360973962:android:67300a0a60f0ceed3ccf73",
+        "android_client_info": {
+          "package_name": "com.example.axcelle_code"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeh5Rd86ubARmiJKYX1UGgB0i8gfS09Jg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

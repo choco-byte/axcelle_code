@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:axcelle_code/theme_service.dart';
@@ -22,39 +23,71 @@ class _MyAccountPageState extends State<MyAccountPage> {
     _loadInitialThemeStatus();
   }
 
-  void _loadInitialThemeStatus() async {
+  // 🔹 Load tema dari SharedPreferences
+  Future<void> _loadInitialThemeStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final savedMode = prefs.getBool(ThemeService.getThemeKey()) ?? false;
 
-    if (mounted) {
-      setState(() {
-        _isDarkMode = savedMode;
-        _isLoading = false;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _isDarkMode = savedMode;
+      _isLoading = false;
+    });
   }
 
+  // 🔹 Logout user dengan bersih (Firebase + lokal)
   Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false);
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    navigatorKey.currentState!.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
-    );
+      // Hapus semua data lokal
+      await prefs.clear();
+
+      // Logout dari Firebase
+      await FirebaseAuth.instance.signOut();
+
+      // Navigasi ulang ke LoginScreen
+      if (!mounted) return;
+      navigatorKey.currentState!.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+
+      // Notifikasi sukses
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Berhasil logout.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Logout error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal logout. Silakan coba lagi.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("My Account"),
+        centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
           children: [
             const Text(
               'Theme Settings',
@@ -72,14 +105,8 @@ class _MyAccountPageState extends State<MyAccountPage> {
               },
             ),
             const Divider(),
-
-            
-
             ListTile(
-              leading: const Icon(
-                Icons.bookmark_border,
-                color: Colors.blue,
-              ),
+              leading: const Icon(Icons.bookmark_border, color: Colors.blue),
               title: const Text('My Watchlist'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {
@@ -92,8 +119,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
               },
             ),
             const Divider(),
-
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
             Center(
               child: ElevatedButton.icon(
                 onPressed: _logout,
@@ -102,10 +128,8 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

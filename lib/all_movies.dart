@@ -1,18 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:axcelle_code/movie_detail_screen.dart'; 
+import 'package:axcelle_code/movie_detail_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 const String _tmdbApiKey = '6c53df6acacc8783afa96e6d4bfda42f';
 const String _baseImageUrl = 'https://image.tmdb.org/t/p/w500';
 
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  final FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+  runApp(
+    MaterialApp(
+      home: MovieTabsPage(analytics: analytics),
+      debugShowCheckedModeBanner: false,
+    ),
+  );
+}
+
+// =============================================================
+// MOVIE CARD
+// =============================================================
 class MovieCard1 extends StatelessWidget {
   final String image;
   final String title;
   final String agerate;
   final bool showStars;
   final double rating;
-  final VoidCallback onTap; 
+  final VoidCallback onTap;
 
   const MovieCard1({
     super.key,
@@ -21,16 +39,16 @@ class MovieCard1 extends StatelessWidget {
     required this.agerate,
     required this.showStars,
     required this.rating,
-    required this.onTap, 
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final isNetworkImage = image.startsWith('http');
-    final clampedRating = (rating / 2.0).clamp(0.0, 5.0); 
+    final clampedRating = (rating / 2.0).clamp(0.0, 5.0);
 
     return GestureDetector(
-      onTap: onTap, 
+      onTap: onTap,
       child: Container(
         constraints: const BoxConstraints(maxWidth: 160),
         child: Column(
@@ -48,7 +66,8 @@ class MovieCard1 extends StatelessWidget {
                             Container(
                           color: Colors.grey.shade300,
                           alignment: Alignment.center,
-                          child: const Icon(Icons.broken_image, color: Colors.grey),
+                          child:
+                              const Icon(Icons.broken_image, color: Colors.grey),
                         ),
                       )
                     : Container(
@@ -57,13 +76,13 @@ class MovieCard1 extends StatelessWidget {
                         child: Text(
                           'No Poster',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          style:
+                              TextStyle(fontSize: 12, color: Colors.grey.shade600),
                         ),
                       ),
               ),
             ),
             const SizedBox(height: 8),
-
             Text(
               title,
               maxLines: 2,
@@ -74,10 +93,9 @@ class MovieCard1 extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-
             Row(
               children: [
-                if (showStars && rating > 0) ...[
+                if (showStars && rating > 0)
                   Row(
                     children: List.generate(5, (index) {
                       return Icon(
@@ -91,11 +109,10 @@ class MovieCard1 extends StatelessWidget {
                       );
                     }),
                   ),
-                  const SizedBox(width: 8),
-                ],
-                
+                const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   decoration: BoxDecoration(
                     color: const Color(0xFF7B1113),
                     borderRadius: BorderRadius.circular(4),
@@ -103,7 +120,7 @@ class MovieCard1 extends StatelessWidget {
                   child: Text(
                     agerate,
                     style: const TextStyle(
-                      fontSize: 10,  
+                      fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
@@ -118,22 +135,18 @@ class MovieCard1 extends StatelessWidget {
   }
 }
 
-class Movie {
-  final String title;
-  final String imageUrl;
-  final String rating;
-
-  Movie(this.title, this.imageUrl, this.rating);
-}
-
+// =============================================================
+// TABS PAGE
+// =============================================================
 class MovieTabsPage extends StatelessWidget {
-  const MovieTabsPage({super.key});
+  final FirebaseAnalytics analytics;
+  const MovieTabsPage({super.key, required this.analytics});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final primaryColor = colorScheme.primary;
-    final surfaceColor = colorScheme.surface; 
+    final surfaceColor = colorScheme.surface;
 
     return DefaultTabController(
       length: 2,
@@ -141,37 +154,32 @@ class MovieTabsPage extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           centerTitle: true,
-          title: Text(
+          title: const Text(
             'Movies',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
+          backgroundColor: const Color(0xFF7B1113),
         ),
         body: Column(
           children: [
             Container(
               color: surfaceColor,
-              child: TabBar(
-                labelColor: primaryColor,
+              child: const TabBar(
+                labelColor: Color(0xFF7B1113),
                 unselectedLabelColor: Colors.grey,
-                indicatorColor: primaryColor,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                tabs: const [
+                indicatorColor: Color(0xFF7B1113),
+                labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                tabs: [
                   Tab(text: 'Now Showing'),
                   Tab(text: 'Coming Soon'),
                 ],
               ),
             ),
-            Divider(height: 0, color: Theme.of(context).scaffoldBackgroundColor),
             Expanded(
               child: TabBarView(
                 children: [
-                  NowShowingMovies(),
-                  ComingSoonMovies(),
+                  NowShowingMovies(analytics: analytics),
+                  ComingSoonMovies(analytics: analytics),
                 ],
               ),
             ),
@@ -182,8 +190,12 @@ class MovieTabsPage extends StatelessWidget {
   }
 }
 
+// =============================================================
+// NOW SHOWING
+// =============================================================
 class NowShowingMovies extends StatefulWidget {
-  const NowShowingMovies({super.key});
+  final FirebaseAnalytics analytics;
+  const NowShowingMovies({super.key, required this.analytics});
 
   @override
   State<NowShowingMovies> createState() => _NowShowingMoviesState();
@@ -192,182 +204,61 @@ class NowShowingMovies extends StatefulWidget {
 class _NowShowingMoviesState extends State<NowShowingMovies> {
   List<Map<String, dynamic>> _movies = [];
   bool _isLoading = true;
-  bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchNowPlayingMovies();
+    _fetchMovies();
+    widget.analytics.logEvent(name: 'now_showing_opened');
   }
 
-  void _handleMovieTap(Map<String, dynamic> movieData) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MovieDetailScreen(movie: movieData),
-      ),
-    );
-  }
-
-  Future<String> _fetchAgeRating(int movieId, String apiKey) async {
-    final url =
-        'https://api.themoviedb.org/3/movie/$movieId/release_dates?api_key=$apiKey';
-
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        final results = data['results'] as List;
-        final usResult = results.firstWhere(
-          (result) => result['iso_3166_1'] == 'US',
-          orElse: () => null,
-        );
-
-        if (usResult != null) {
-          final releases = usResult['release_dates'] as List;
-          if (releases.isNotEmpty && releases[0]['certification'] != null) {
-            final certification = releases[0]['certification'] as String;
-            return certification.isNotEmpty ? certification : 'N/A';
-          }
-        }
-        return 'N/A';
-      }
-    } catch (e) {
-      debugPrint('Error fetching age rating: $e');
-      return 'N/A';
-    }
-    return 'N/A';
-  }
-
-  Future<void> _fetchNowPlayingMovies() async {
-    if (_tmdbApiKey == 'YOUR_TMDB_API_KEY_HERE' || _tmdbApiKey.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _hasError = true;
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-    
+  Future<void> _fetchMovies() async {
     final url =
         'https://api.themoviedb.org/3/movie/now_playing?api_key=$_tmdbApiKey&language=en-US&page=1';
-
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-        _hasError = false;
-      });
-    }
-
     try {
       final response = await http.get(Uri.parse(url));
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final results = List<Map<String, dynamic>>.from(data['results']);
-
-        List<Map<String, dynamic>> moviesWithRating = [];
-        for (var movie in results.take(10)) { 
-          final movieId = movie['id'] as int;
-          final ageRating = await _fetchAgeRating(movieId, _tmdbApiKey);
-
-          movie['certification'] = ageRating;
-          moviesWithRating.add(movie);
-        }
-        if (mounted) {
-          setState(() {
-            _movies = moviesWithRating;
-            _isLoading = false;
-          });
-        }
-      } else {
-        debugPrint(
-            'Failed to load now playing movies. Status: ${response.statusCode}');
-        if (mounted) {
-          setState(() {
-            _hasError = true;
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Error fetching now playing movies: $e');
-      if (mounted) {
         setState(() {
-          _hasError = true;
+          _movies = List<Map<String, dynamic>>.from(data['results']);
           _isLoading = false;
         });
       }
+    } catch (e) {
+      debugPrint('Error fetching now playing: $e');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator(color: primaryColor));
-    }
-
-    if (_hasError) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: primaryColor),
-              const SizedBox(height: 16),
-              const Text(
-                'Gagal memuat film yang sedang tayang.',  
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              if (_tmdbApiKey == 'YOUR_TMDB_API_KEY_HERE')
-                const Text(
-                  '\nPastikan Anda telah mengganti placeholder API key dengan kunci TMDB yang valid.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.red),
-                ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_movies.isEmpty) {
       return const Center(
-        child: Text('Tidak ada film yang sedang tayang.'),
-      );
+          child: CircularProgressIndicator(color: Color(0xFF7B1113)));
     }
-
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: GridView.builder(
+        itemCount: _movies.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.55,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
-        itemCount: _movies.length,
-        itemBuilder: (context, index) {
-          final movie = _movies[index];
-          final agerate = movie['certification'] ?? 'N/A';
-          final posterPath = movie['poster_path'];
-          
-          final double tmdbRating = (movie['vote_average'] as num?)?.toDouble() ?? 0.0; 
-
+        itemBuilder: (context, i) {
+          final m = _movies[i];
           return MovieCard1(
-            image: posterPath != null ? '$_baseImageUrl$posterPath' : '',
-            title: movie['title'] ?? 'No Title',
-            agerate: agerate,
+            image: '$_baseImageUrl${m['poster_path'] ?? ''}',
+            title: m['title'] ?? 'No Title',
+            agerate: 'PG',
             showStars: true,
-            rating: tmdbRating,
-            onTap: () => _handleMovieTap(movie), 
+            rating: (m['vote_average'] as num?)?.toDouble() ?? 0,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MovieDetailScreen(movie: m),
+              ),
+            ),
           );
         },
       ),
@@ -375,8 +266,12 @@ class _NowShowingMoviesState extends State<NowShowingMovies> {
   }
 }
 
+// =============================================================
+// COMING SOON
+// =============================================================
 class ComingSoonMovies extends StatefulWidget {
-  const ComingSoonMovies({super.key});
+  final FirebaseAnalytics analytics;
+  const ComingSoonMovies({super.key, required this.analytics});
 
   @override
   State<ComingSoonMovies> createState() => _ComingSoonMoviesState();
@@ -385,181 +280,62 @@ class ComingSoonMovies extends StatefulWidget {
 class _ComingSoonMoviesState extends State<ComingSoonMovies> {
   List<Map<String, dynamic>> _movies = [];
   bool _isLoading = true;
-  bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchUpcomingMovies();
+    _fetchMovies();
+    widget.analytics.logEvent(name: 'coming_soon_opened');
   }
 
-  void _handleMovieTap(Map<String, dynamic> movieData) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MovieDetailScreen(movie: movieData),
-      ),
-    );
-  }
-
-  Future<String> _fetchAgeRating(int movieId, String apiKey) async {
-    final url =
-        'https://api.themoviedb.org/3/movie/$movieId/release_dates?api_key=$apiKey';
-
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        final results = data['results'] as List;
-        final usResult = results.firstWhere(
-          (result) => result['iso_3166_1'] == 'US',
-          orElse: () => null,
-        );
-
-        if (usResult != null) {
-          final releases = usResult['release_dates'] as List;
-          if (releases.isNotEmpty && releases[0]['certification'] != null) {
-            final certification = releases[0]['certification'] as String;
-            return certification.isNotEmpty ? certification : 'N/A';
-          }
-        }
-        return 'N/A';
-      }
-    } catch (e) {
-      debugPrint('Error fetching age rating: $e');
-      return 'N/A';
-    }
-    return 'N/A';
-  }
-
-
-  Future<void> _fetchUpcomingMovies() async {
-    if (_tmdbApiKey == 'YOUR_TMDB_API_KEY_HERE' || _tmdbApiKey.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _hasError = true;
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
+  Future<void> _fetchMovies() async {
     final url =
         'https://api.themoviedb.org/3/movie/upcoming?api_key=$_tmdbApiKey&language=en-US&page=1';
-
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-        _hasError = false;
-      });
-    }
-
     try {
       final response = await http.get(Uri.parse(url));
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final results = List<Map<String, dynamic>>.from(data['results']);
-
-        List<Map<String, dynamic>> moviesWithRating = [];
-        for (var movie in results.take(10)) {
-          final movieId = movie['id'] as int;
-          final ageRating = await _fetchAgeRating(movieId, _tmdbApiKey);
-
-          movie['certification'] = ageRating;
-          moviesWithRating.add(movie);
-        }
-        if (mounted) {
-          setState(() {
-            _movies = moviesWithRating;
-            _isLoading = false;
-          });
-        }
-      } else {
-        debugPrint(
-            'Failed to load upcoming movies. Status: ${response.statusCode}');
-        if (mounted) {
-          setState(() {
-            _hasError = true;
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Error fetching upcoming movies: $e');
-      if (mounted) {
         setState(() {
-          _hasError = true;
+          _movies = List<Map<String, dynamic>>.from(data['results']);
           _isLoading = false;
         });
       }
+    } catch (e) {
+      debugPrint('Error fetching coming soon: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator(color: primaryColor));
-    }
-
-    if (_hasError) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: primaryColor),
-              const SizedBox(height: 16),
-              const Text(
-                'Gagal memuat film yang akan datang.',  
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              if (_tmdbApiKey == 'YOUR_TMDB_API_KEY_HERE')
-                const Text(
-                  '\nPastikan Anda telah mengganti placeholder API key dengan kunci TMDB yang valid.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.red),
-                ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_movies.isEmpty) {
       return const Center(
-        child: Text('Tidak ada film yang akan datang.'),
-      );
+          child: CircularProgressIndicator(color: Color(0xFF7B1113)));
     }
-
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: GridView.builder(
+        itemCount: _movies.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.55,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
-        itemCount: _movies.length,
-        itemBuilder: (context, index) {
-          final movie = _movies[index];
-          final agerate = movie['certification'] ?? 'N/A';
-          final posterPath = movie['poster_path'];
-          
-          final double tmdbRating = (movie['vote_average'] as num?)?.toDouble() ?? 0.0; 
-
+        itemBuilder: (context, i) {
+          final m = _movies[i];
           return MovieCard1(
-            image: posterPath != null ? '$_baseImageUrl$posterPath' : '',
-            title: movie['title'] ?? 'No Title',
-            agerate: agerate,
-            showStars: true,
-            rating: tmdbRating,
-            onTap: () => _handleMovieTap(movie), 
+            image: '$_baseImageUrl${m['poster_path'] ?? ''}',
+            title: m['title'] ?? 'No Title',
+            agerate:
+                m['release_date']?.toString().split('-')[0] ?? 'Coming Soon',
+            showStars: false,
+            rating: 0.0,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MovieDetailScreen(movie: m),
+              ),
+            ),
           );
         },
       ),

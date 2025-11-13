@@ -1,7 +1,8 @@
-import 'package:axcelle_code/login.dart';
-import 'package:axcelle_code/navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:axcelle_code/login.dart';
+import 'package:axcelle_code/navigator.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -12,11 +13,92 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _rePasswordController = TextEditingController();
+
+  bool _isLoading = false;
+
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Create account in Firebase
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      // Optionally set display name
+      await userCredential.user?.updateDisplayName(
+        _usernameController.text.trim(),
+      );
+
+      await userCredential.user?.reload();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registration successful!')),
+        );
+
+        // Navigate to main app
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Nav()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Registration failed.';
+
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = 'This email is already in use.';
+          break;
+        case 'invalid-email':
+          message = 'Invalid email address.';
+          break;
+        case 'operation-not-allowed':
+          message = 'Email/password accounts are not enabled.';
+          break;
+        case 'weak-password':
+          message = 'The password is too weak.';
+          break;
+        default:
+          message = 'An unexpected error occurred: ${e.message}';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _rePasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,11 +154,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: Icon(Icons.person),
                       hintText: 'Enter username',
                     ),
-                    validator:
-                        (value) =>
-                            value == null || value.isEmpty
-                                ? 'Username is required'
-                                : null,
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Username is required' : null,
                   ),
                   const SizedBox(height: 20),
 
@@ -90,8 +169,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Email is required';
-                      } else if (!value.contains('@gmail.com')) {
-                        return 'Email must contain @gmail.com';
+                      } else if (!value.contains('@')) {
+                        return 'Enter a valid email';
                       }
                       return null;
                     },
@@ -106,11 +185,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: Icon(Icons.lock),
                       hintText: 'Enter password',
                     ),
-                    validator:
-                        (value) =>
-                            value == null || value.isEmpty
-                                ? 'Password is required'
-                                : null,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Password is required';
+                      } else if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 20),
 
@@ -124,7 +206,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Re-enter your password';
+                        return 'Please re-enter your password';
                       } else if (value != _passwordController.text) {
                         return 'Passwords do not match';
                       }
@@ -144,20 +226,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => Nav(),
+                      onPressed: _isLoading ? null : _register,
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                              'REGISTER',
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                          );
-                        }
-                      },
-                      child: const Text(
-                        'REGISTER',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
                     ),
                   ),
                   const SizedBox(height: 15),
@@ -168,7 +243,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => LoginScreen(),
+                            builder: (context) => const LoginScreen(),
                           ),
                         );
                       },
