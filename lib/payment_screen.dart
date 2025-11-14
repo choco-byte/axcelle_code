@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'success_payment_screen.dart'; // Must import the success page
+import 'success_payment_screen.dart'; 
 
 class PaymentScreen extends StatefulWidget {
   final double totalPrice;

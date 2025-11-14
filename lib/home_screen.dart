@@ -248,7 +248,6 @@ Future<void> _logHomeScreenOpened() async {
     super.dispose();
   }
 
-  // MARK: - UI Builder Components
   Widget _buildSectionHeader(String title) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -390,16 +389,16 @@ Future<void> _logHomeScreenOpened() async {
                       itemCount: _searchResults.length,
                       itemBuilder: (context, index) {
                         final movie =
-                            _searchResults[index]; // Tipe sudah Map<String, dynamic>
+                            _searchResults[index]; 
                         return MovieCard(
                           title: movie['title'] ?? 'No Title',
                           image:
                               movie['image'] ??
-                              '', // Path gambar yang sudah dinormalisasi
+                              '',
                           scale: 1.0,
                           opacity: 1.0,
                           onTap: () =>
-                              _handleMovieTap(movie), // PASSING DATA FIX
+                              _handleMovieTap(movie), 
                         );
                       },
                     ),
@@ -473,7 +472,7 @@ Future<void> _logHomeScreenOpened() async {
                             scale: 1.0,
                             opacity: 1.0,
                             onTap: () =>
-                                _handleMovieTap(movie), // PASSING DATA FIX
+                                _handleMovieTap(movie), 
                           ),
                         );
                       },

@@ -28,14 +28,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Create account in Firebase
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // Optionally set display name
       await userCredential.user?.updateDisplayName(
         _usernameController.text.trim(),
       );
@@ -47,7 +45,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SnackBar(content: Text('Registration successful!')),
         );
 
-        // Navigate to main app
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Nav()),

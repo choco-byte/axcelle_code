@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:axcelle_code/services/database_helper.dart';
-import 'seat_selection.dart'; // ✅ Import halaman seat selection
-
+import 'seat_selection.dart'; 
 class MovieDetailScreen extends StatefulWidget {
   final Map<String, dynamic> movie;
 
@@ -98,13 +97,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
               return IconButton(
                 icon: Icon(
-                  // Ubah ikon menjadi bookmark
                   isInWatchlist ? Icons.bookmark : Icons.bookmark_border,
                   color: isInWatchlist
                       ? Colors
-                            .yellow // Kuning saat tersimpan (isInWatchlist = true)
+                            .yellow 
                       : Colors
-                            .white, // Putih saat belum tersimpan (isInWatchlist = false)
+                            .white, 
                 ),
                 onPressed: _toggleWatchlist,
               );
@@ -194,7 +192,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // ✅ Navigasi ke halaman SeatSelectionScreen
                   Navigator.push(
                     context,
                     MaterialPageRoute(

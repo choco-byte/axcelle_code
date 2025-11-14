@@ -23,7 +23,6 @@ class _MyAccountPageState extends State<MyAccountPage> {
     _loadInitialThemeStatus();
   }
 
-  // 🔹 Load tema dari SharedPreferences
   Future<void> _loadInitialThemeStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final savedMode = prefs.getBool(ThemeService.getThemeKey()) ?? false;
@@ -35,25 +34,20 @@ class _MyAccountPageState extends State<MyAccountPage> {
     });
   }
 
-  // 🔹 Logout user dengan bersih (Firebase + lokal)
   Future<void> _logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Hapus semua data lokal
       await prefs.clear();
 
-      // Logout dari Firebase
       await FirebaseAuth.instance.signOut();
 
-      // Navigasi ulang ke LoginScreen
       if (!mounted) return;
       navigatorKey.currentState!.pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
         (route) => false,
       );
 
-      // Notifikasi sukses
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Berhasil logout.'),

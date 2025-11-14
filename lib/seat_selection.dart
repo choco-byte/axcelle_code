@@ -289,11 +289,9 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                     return;
                   }
 
-                  // Save ticket
                   await _saveTicket(widget.movieTitle, selectedDate!,
                       selectedTime!, selectedSeats);
 
-                  // Go to payment screen
                   Navigator.push(
                     context,
                     MaterialPageRoute(

@@ -21,9 +21,6 @@ Future<void> main() async {
   );
 }
 
-// =============================================================
-// MOVIE CARD
-// =============================================================
 class MovieCard1 extends StatelessWidget {
   final String image;
   final String title;
@@ -135,9 +132,6 @@ class MovieCard1 extends StatelessWidget {
   }
 }
 
-// =============================================================
-// TABS PAGE
-// =============================================================
 class MovieTabsPage extends StatelessWidget {
   final FirebaseAnalytics analytics;
   const MovieTabsPage({super.key, required this.analytics});
@@ -190,9 +184,6 @@ class MovieTabsPage extends StatelessWidget {
   }
 }
 
-// =============================================================
-// NOW SHOWING
-// =============================================================
 class NowShowingMovies extends StatefulWidget {
   final FirebaseAnalytics analytics;
   const NowShowingMovies({super.key, required this.analytics});
@@ -266,9 +257,6 @@ class _NowShowingMoviesState extends State<NowShowingMovies> {
   }
 }
 
-// =============================================================
-// COMING SOON
-// =============================================================
 class ComingSoonMovies extends StatefulWidget {
   final FirebaseAnalytics analytics;
   const ComingSoonMovies({super.key, required this.analytics});

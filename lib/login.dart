@@ -27,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 🔥 Sign in using Firebase
       final UserCredential userCredential =
           await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -36,7 +35,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final user = userCredential.user;
       if (user != null && mounted) {
-        // ✅ Successful login → navigate to home
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Nav()),
