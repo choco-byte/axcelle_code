@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:axcelle_code/services/database_helper.dart'; 
+import 'package:axcelle_code/services/database_helper.dart';
 import 'seat_selection.dart'; // ✅ Import halaman seat selection
 
 class MovieDetailScreen extends StatefulWidget {
@@ -37,7 +37,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     String message;
 
     if (isCurrentlyWatchlisted) {
-      await dbHelper.removeFromWatchlist(movieId); 
+      await dbHelper.removeFromWatchlist(movieId);
       message = '$movieTitle dihapus dari Watchlist.';
     } else {
       await dbHelper.addToWatchlist({
@@ -49,20 +49,21 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
 
     setState(() {
-      _isWatchlistedFuture = Future.value(!isCurrentlyWatchlisted); 
+      _isWatchlistedFuture = Future.value(!isCurrentlyWatchlisted);
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _getMovieImageUrl() {
-    if (widget.movie.containsKey('poster_path') && widget.movie['poster_path'] != null) {
+    if (widget.movie.containsKey('poster_path') &&
+        widget.movie['poster_path'] != null) {
       return 'https://image.tmdb.org/t/p/w500${widget.movie['poster_path']}';
-    } 
-    else if (widget.movie.containsKey('image') && widget.movie['image'] != null) {
-      return widget.movie['image']; 
+    } else if (widget.movie.containsKey('image') &&
+        widget.movie['image'] != null) {
+      return widget.movie['image'];
     }
     return 'https://via.placeholder.com/500x750?text=No+Image';
   }
@@ -83,22 +84,29 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Padding(
                   padding: EdgeInsets.only(right: 15.0),
-                  child: Center(child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.0),
-                  )),
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.0),
+                    ),
+                  ),
                 );
               }
 
               final bool isInWatchlist = snapshot.data ?? false;
-              
+
               return IconButton(
                 icon: Icon(
-                  isInWatchlist ? Icons.favorite : Icons.favorite_border,
-                  color: isInWatchlist ? Colors.red : Theme.of(context).iconTheme.color,
+                  // Ubah ikon menjadi bookmark
+                  isInWatchlist ? Icons.bookmark : Icons.bookmark_border,
+                  color: isInWatchlist
+                      ? Colors
+                            .yellow // Kuning saat tersimpan (isInWatchlist = true)
+                      : Colors
+                            .white, // Putih saat belum tersimpan (isInWatchlist = false)
                 ),
-                onPressed: _toggleWatchlist, 
+                onPressed: _toggleWatchlist,
               );
             },
           ),
@@ -109,71 +117,78 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             Center(
-               child: ClipRRect(
-                 borderRadius: BorderRadius.circular(10),
-                 child: isLocalAsset
-                     ? Image.asset(
-                         imageUrl,
-                         height: 300,
-                         fit: BoxFit.cover,
-                         errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 300),
-                       )
-                     : Image.network(
-                         imageUrl,
-                         height: 300,
-                         fit: BoxFit.cover,
-                         loadingBuilder: (context, child, loadingProgress) {
-                           if (loadingProgress == null) return child;
-                           return SizedBox(
-                             height: 300,
-                             child: Center(
-                               child: CircularProgressIndicator(
-                                 value: loadingProgress.expectedTotalBytes != null
-                                     ? loadingProgress.cumulativeBytesLoaded /
-                                           loadingProgress.expectedTotalBytes!
-                                     : null,
-                               ),
-                             ),
-                           );
-                         },
-                         errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 300),
-                       ),
-               ),
-             ),
-             
-             const SizedBox(height: 20),
-             
-             Text(
-               widget.movie['title'] ?? 'N/A',
-               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-             ),
-             
-             const SizedBox(height: 10),
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: isLocalAsset
+                    ? Image.asset(
+                        imageUrl,
+                        height: 300,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.broken_image, size: 300),
+                      )
+                    : Image.network(
+                        imageUrl,
+                        height: 300,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return SizedBox(
+                            height: 300,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.broken_image, size: 300),
+                      ),
+              ),
+            ),
 
-             if (widget.movie['vote_average'] != null)
-               Row(
-                 children: [
-                   const Icon(Icons.star, color: Colors.amber, size: 20),
-                   const SizedBox(width: 5),
-                   Text(
-                     'Rating: ${widget.movie['vote_average'].toString()}',
-                     style: const TextStyle(fontSize: 16),
-                   ),
-                 ],
-               ),
-             
-             const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
-             Text(
-               'Overview:',
-               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
-             ),
-             const SizedBox(height: 5),
-             Text(
-               widget.movie['overview'] ?? 'Sinopsis tidak tersedia.',
-               style: const TextStyle(fontSize: 16),
-             ),
+            Text(
+              widget.movie['title'] ?? 'N/A',
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 10),
+
+            if (widget.movie['vote_average'] != null)
+              Row(
+                children: [
+                  const Icon(Icons.star, color: Colors.amber, size: 20),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Rating: ${widget.movie['vote_average'].toString()}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+
+            const SizedBox(height: 10),
+
+            Text(
+              'Overview:',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              widget.movie['overview'] ?? 'Sinopsis tidak tersedia.',
+              style: const TextStyle(fontSize: 16),
+            ),
             const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
