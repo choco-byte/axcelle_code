@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:axcelle_code/navigator.dart';
 import 'package:axcelle_code/register.dart';
 import 'package:axcelle_code/forget.dart';
@@ -15,6 +17,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -34,7 +37,19 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       final user = userCredential.user;
-      if (user != null && mounted) {
+
+      if (user != null) {
+        // 🔥 CREATE / UPDATE USER IN FIRESTORE
+        await _firestore.collection('users').doc(user.uid).set({
+          'email': user.email ?? '',
+          'displayName': user.displayName ?? 'User',
+          'photoUrl': user.photoURL ?? '',
+          'lastLogin': FieldValue.serverTimestamp(),
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+        if (!mounted) return;
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Nav()),
@@ -60,9 +75,8 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
       }
     } catch (e) {
       if (mounted) {
@@ -131,11 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 25),
 
-                        // Email field
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('Email', style: TextStyle(fontSize: 14)),
-                        ),
+                        const Text('Email'),
                         TextFormField(
                           controller: _emailController,
                           decoration: const InputDecoration(
@@ -153,11 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 15),
 
-                        // Password field
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('Password', style: TextStyle(fontSize: 14)),
-                        ),
+                        const Text('Password'),
                         TextFormField(
                           controller: _passwordController,
                           obscureText: true,
@@ -176,7 +182,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 10),
 
-                        // Forgot password
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
@@ -188,28 +193,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               );
                             },
-                            child: const Text(
-                              'Forgot Password?',
-                              style: TextStyle(fontSize: 12),
-                            ),
+                            child: const Text('Forgot Password?'),
                           ),
                         ),
 
                         const SizedBox(height: 10),
 
-                        // Login button
                         SizedBox(
                           width: double.infinity,
                           height: 45,
                           child: ElevatedButton(
+                            onPressed: _isLoading ? null : _login,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF641717),
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
                             ),
-                            onPressed: _isLoading ? null : _login,
                             child: _isLoading
                                 ? const CircularProgressIndicator(
                                     color: Colors.white,
@@ -228,7 +226,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 15),
 
-                // Register redirect
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -250,14 +247,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
                         ),
                       ),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 20),
               ],
             ),
           ),

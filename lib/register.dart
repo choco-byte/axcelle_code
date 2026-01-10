@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:axcelle_code/login.dart';
 import 'package:axcelle_code/navigator.dart';
 
@@ -13,7 +15,9 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -28,19 +32,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      UserCredential userCredential =
+      // 🔐 CREATE ACCOUNT
+      final UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      await userCredential.user?.updateDisplayName(
-        _usernameController.text.trim(),
-      );
+      final user = userCredential.user;
 
-      await userCredential.user?.reload();
+      if (user != null) {
+        // 👤 UPDATE DISPLAY NAME (AUTH)
+        await user.updateDisplayName(
+          _usernameController.text.trim(),
+        );
 
-      if (mounted) {
+        // 🔥 SAVE USER TO FIRESTORE
+        await _firestore.collection('users').doc(user.uid).set({
+          'username': _usernameController.text.trim(),
+          'email': user.email ?? '',
+          'photoUrl': '',
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+
+        await user.reload();
+
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration successful!')),
         );
@@ -67,24 +86,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
           message = 'The password is too weak.';
           break;
         default:
-          message = 'An unexpected error occurred: ${e.message}';
+          message = 'Unexpected error: ${e.message}';
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -134,17 +149,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
+
                   const Text(
                     'REGISTER',
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
                     ),
                   ),
                   const SizedBox(height: 25),
 
-                  const Text('Username', style: TextStyle(fontSize: 14)),
+                  const Text('Username'),
                   TextFormField(
                     controller: _usernameController,
                     decoration: const InputDecoration(
@@ -152,11 +167,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       hintText: 'Enter username',
                     ),
                     validator: (value) =>
-                        value == null || value.isEmpty ? 'Username is required' : null,
+                        value == null || value.isEmpty
+                            ? 'Username is required'
+                            : null,
                   ),
                   const SizedBox(height: 20),
 
-                  const Text('Email', style: TextStyle(fontSize: 14)),
+                  const Text('Email'),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
@@ -174,7 +191,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  const Text('Password', style: TextStyle(fontSize: 14)),
+                  const Text('Password'),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
@@ -193,7 +210,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  const Text('Re-Password', style: TextStyle(fontSize: 14)),
+                  const Text('Re-Password'),
                   TextFormField(
                     controller: _rePasswordController,
                     obscureText: true,
@@ -216,6 +233,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     width: double.infinity,
                     height: 45,
                     child: ElevatedButton(
+                      onPressed: _isLoading ? null : _register,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF641717),
                         foregroundColor: Colors.white,
@@ -223,7 +241,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
-                      onPressed: _isLoading ? null : _register,
                       child: _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -15,10 +16,14 @@ void main() async {
   await FirebaseAnalytics.instance.logEvent(
     name: 'app_start',
     parameters: {'success': 'true'},
+  
   );
+
 
   runApp(const MyApp());
 }
+
+
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});

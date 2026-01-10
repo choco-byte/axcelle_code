@@ -141,10 +141,7 @@ Future<void> _logHomeScreenOpened() async {
         });
       }
     } catch (e) {
-      setState(() {
-        _hasError = true;
-        _isLoading = false;
-      });
+      
     }
   }
 
