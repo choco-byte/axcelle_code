@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'login.dart';
 import 'navigator.dart';
 import 'theme_service.dart';
+import 'notification_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -15,13 +16,17 @@ void main() async {
 
   await Firebase.initializeApp();
 
-  // ✅ AdMob init (WAJIB, sudah benar)
+  // ADMOB
   await MobileAds.instance.initialize();
 
+  // ANALYTICS
   await FirebaseAnalytics.instance.logEvent(
     name: 'app_start',
     parameters: {'success': 'true'},
   );
+
+  // 🔔 INIT NOTIFICATION
+  await NotificationService.init();
 
   runApp(const MyApp());
 }

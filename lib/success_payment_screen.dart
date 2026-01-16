@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:axcelle_code/payment_screen.dart';
+import 'notification_service.dart';
 
-class SuccessPaymentScreen extends StatelessWidget {
+class SuccessPaymentScreen extends StatefulWidget {
   final String movieTitle;
   final String selectedDate;
   final String selectedTime;
@@ -20,6 +20,29 @@ class SuccessPaymentScreen extends StatelessWidget {
   });
 
   @override
+  State<SuccessPaymentScreen> createState() => _SuccessPaymentScreenState();
+}
+
+class _SuccessPaymentScreenState extends State<SuccessPaymentScreen> {
+  bool _notificationSent = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    /// 🔔 Tampilkan notifikasi SETELAH halaman sukses muncul
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_notificationSent) {
+        NotificationService.showTicketSuccess(
+          eventName: widget.movieTitle,
+          ticketCode: widget.selectedSeats.join(', '),
+        );
+        _notificationSent = true;
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -29,27 +52,31 @@ class SuccessPaymentScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.check_circle,
-                  color: Colors.green, size: 100),
+              const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 100,
+              ),
               const SizedBox(height: 20),
 
               const Text(
                 "Payment Successful!",
                 style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black),
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
 
               const SizedBox(height: 20),
 
               Text(
-                "Movie: $movieTitle\n"
-                "Date: $selectedDate\n"
-                "Time: $selectedTime\n"
-                "Seats: ${selectedSeats.join(', ')}\n"
-                "Method: $paymentMethod\n"
-                "Total: Rp${totalPrice.toStringAsFixed(0)}",
+                "Movie: ${widget.movieTitle}\n"
+                "Date: ${widget.selectedDate}\n"
+                "Time: ${widget.selectedTime}\n"
+                "Seats: ${widget.selectedSeats.join(', ')}\n"
+                "Method: ${widget.paymentMethod}\n"
+                "Total: Rp${widget.totalPrice.toStringAsFixed(0)}",
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 18),
               ),
@@ -63,7 +90,9 @@ class SuccessPaymentScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 40, vertical: 14),
+                    horizontal: 40,
+                    vertical: 14,
+                  ),
                 ),
                 child: const Text(
                   "Back to Home",

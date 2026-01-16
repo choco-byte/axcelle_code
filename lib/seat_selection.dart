@@ -289,10 +289,8 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                     return;
                   }
 
-
                   await _saveTicket(widget.movieTitle, selectedDate!,
                       selectedTime!, selectedSeats);
-
 
                   Navigator.push(
                     context,

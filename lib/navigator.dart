@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import 'notification_service.dart';
 import 'home_screen.dart';
 import 'tickets_all.dart';
 import 'profile.dart';
@@ -19,6 +20,7 @@ class _NavState extends State<Nav> {
     MyAccountPage(),
   ];
 
+
   void _onItemTap(int index) {
     setState(() {
       _selectedIndex = index;
@@ -27,23 +29,12 @@ class _NavState extends State<Nav> {
 
   bool _isConnected(List<ConnectivityResult>? results) {
     if (results == null || results.isEmpty) return true;
-    return results.any((result) =>
-        result == ConnectivityResult.mobile ||
-        result == ConnectivityResult.wifi ||
-        result == ConnectivityResult.ethernet);
-  }
-
-  String _getTitle() {
-    switch (_selectedIndex) {
-      case 0:
-        return 'Home';
-      case 1:
-        return 'Tickets';
-      case 2:
-        return 'Profile';
-      default:
-        return '';
-    }
+    return results.any(
+      (result) =>
+          result == ConnectivityResult.mobile ||
+          result == ConnectivityResult.wifi ||
+          result == ConnectivityResult.ethernet,
+    );
   }
 
   @override
@@ -55,23 +46,11 @@ class _NavState extends State<Nav> {
 
         return Scaffold(
           backgroundColor: Colors.white,
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF7B1113),
-            title: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                _getTitle(),
-                style: const TextStyle(color: Colors.white, fontSize: 20),
-              ),
-            ),
-            elevation: 0,
-          ),
           body: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: isOnline
                 ? _widgetOptions.elementAt(_selectedIndex)
                 : const Center(
-                    key: ValueKey('offline'),
                     child: Text(
                       'Opps, no internet connection',
                       style: TextStyle(
@@ -85,10 +64,7 @@ class _NavState extends State<Nav> {
           ),
           bottomNavigationBar: BottomNavigationBar(
             items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home),
-                label: 'Home',
-              ),
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
               BottomNavigationBarItem(
                 icon: Icon(Icons.movie_outlined),
                 label: 'Tickets',
