@@ -1,8 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import 'notification_service.dart';
 import 'home_screen.dart';
 import 'tickets_all.dart';
 import 'profile.dart';
@@ -20,6 +19,7 @@ class _NavState extends State<Nav> {
     TicketsPage(),
     MyAccountPage(),
   ];
+
 
   void _onItemTap(int index) {
     setState(() {
@@ -51,7 +51,6 @@ class _NavState extends State<Nav> {
             child: isOnline
                 ? _widgetOptions.elementAt(_selectedIndex)
                 : const Center(
-                    key: ValueKey('offline'),
                     child: Text(
                       'Opps, no internet connection',
                       style: TextStyle(
