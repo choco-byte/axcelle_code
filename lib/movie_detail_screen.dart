@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:axcelle_code/services/database_helper.dart';
-import 'seat_selection.dart'; 
+import 'seat_selection.dart';
+
 class MovieDetailScreen extends StatefulWidget {
   final Map<String, dynamic> movie;
 
@@ -13,10 +15,39 @@ class MovieDetailScreen extends StatefulWidget {
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
   late Future<bool> _isWatchlistedFuture;
 
+  // ===== ADMOB BANNER =====
+  BannerAd? _bannerAd;
+  bool _isBannerAdLoaded = false;
+
   @override
   void initState() {
     super.initState();
     _isWatchlistedFuture = _checkWatchlistStatus();
+
+    _bannerAd = BannerAd(
+      adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {
+            _isBannerAdLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          debugPrint('BannerAd failed to load: $error');
+        },
+      ),
+    );
+
+    _bannerAd!.load();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
   }
 
   Future<bool> _checkWatchlistStatus() async {
@@ -51,9 +82,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       _isWatchlistedFuture = Future.value(!isCurrentlyWatchlisted);
     });
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _getMovieImageUrl() {
@@ -75,34 +105,31 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.movie['title'] ?? 'Detail Film'),
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         actions: [
           FutureBuilder<bool>(
             future: _isWatchlistedFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Padding(
-                  padding: EdgeInsets.only(right: 15.0),
+                  padding: EdgeInsets.only(right: 15),
                   child: Center(
                     child: SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2.0),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   ),
                 );
               }
 
-              final bool isInWatchlist = snapshot.data ?? false;
+              final isInWatchlist = snapshot.data ?? false;
 
               return IconButton(
                 icon: Icon(
-                  isInWatchlist ? Icons.bookmark : Icons.bookmark_border,
-                  color: isInWatchlist
-                      ? Colors
-                            .yellow 
-                      : Colors
-                            .white, 
+                  isInWatchlist
+                      ? Icons.bookmark
+                      : Icons.bookmark_border,
+                  color: isInWatchlist ? Colors.yellow : Colors.white,
                 ),
                 onPressed: _toggleWatchlist,
               );
@@ -111,7 +138,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -123,8 +150,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         imageUrl,
                         height: 300,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image, size: 300),
                       )
                     : Image.network(
                         imageUrl,
@@ -132,16 +157,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         fit: BoxFit.cover,
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
-                          return SizedBox(
+                          return const SizedBox(
                             height: 300,
                             child: Center(
-                              child: CircularProgressIndicator(
-                                value:
-                                    loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
+                              child: CircularProgressIndicator(),
                             ),
                           );
                         },
@@ -155,7 +174,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
             Text(
               widget.movie['title'] ?? 'N/A',
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
             ),
 
             const SizedBox(height: 10),
@@ -166,13 +188,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   const Icon(Icons.star, color: Colors.amber, size: 20),
                   const SizedBox(width: 5),
                   Text(
-                    'Rating: ${widget.movie['vote_average'].toString()}',
+                    'Rating: ${widget.movie['vote_average']}',
                     style: const TextStyle(fontSize: 16),
                   ),
                 ],
               ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 15),
 
             Text(
               'Overview:',
@@ -182,12 +204,28 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
+
             const SizedBox(height: 5),
+
             Text(
               widget.movie['overview'] ?? 'Sinopsis tidak tersedia.',
               style: const TextStyle(fontSize: 16),
             ),
+
+            const SizedBox(height: 25),
+
+            // ===== ADMOB BANNER =====
+            if (_isBannerAdLoaded)
+              Center(
+                child: SizedBox(
+                  width: _bannerAd!.size.width.toDouble(),
+                  height: _bannerAd!.size.height.toDouble(),
+                  child: AdWidget(ad: _bannerAd!),
+                ),
+              ),
+
             const SizedBox(height: 30),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -195,14 +233,18 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SeatSelectionScreen(
-                        movieTitle: widget.movie['title'] ?? 'Film Tanpa Judul',
+                      builder: (_) => SeatSelectionScreen(
+                        movieTitle:
+                            widget.movie['title'] ?? 'Film Tanpa Judul',
                       ),
                     ),
                   );
                 },
-                icon: const Icon(Icons.confirmation_number_sharp),
-                label: const Text('Book Now', style: TextStyle(fontSize: 18)),
+                icon: const Icon(Icons.confirmation_number),
+                label: const Text(
+                  'Book Now',
+                  style: TextStyle(fontSize: 18),
+                ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
