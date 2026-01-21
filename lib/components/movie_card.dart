@@ -6,6 +6,7 @@ class MovieCard extends StatelessWidget {
   final double scale;
   final double opacity;
   final VoidCallback? onTap;
+  final String? heroTag; // 1. Tambahkan variabel ini
 
   const MovieCard({
     super.key,
@@ -14,6 +15,7 @@ class MovieCard extends StatelessWidget {
     required this.scale,
     required this.opacity,
     this.onTap,
+    this.heroTag, // 2. Tambahkan ke constructor
   });
 
   bool get isNetworkImage {
@@ -23,10 +25,54 @@ class MovieCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final cardWidth = size.width * 0.45;
-    final cardHeight = size.height * 0.35;
 
-    return GestureDetector( 
+    // Widget poster dipisahkan agar kodenya lebih rapi saat dibungkus Hero
+    Widget posterContent = ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: isNetworkImage
+            ? Image.network(
+                image,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.broken_image, size: 60),
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    color: Colors.black12,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                },
+              )
+            : Image.asset(
+                image,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.broken_image, size: 60),
+                  );
+                },
+              ),
+      ),
+    );
+
+    return GestureDetector(
       onTap: onTap,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),
@@ -34,58 +80,19 @@ class MovieCard extends StatelessWidget {
         child: Transform.scale(
           scale: scale,
           child: Column(
-          
-            crossAxisAlignment: CrossAxisAlignment.stretch, 
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded( 
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: isNetworkImage
-                        ? Image.network(
-                            image,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.broken_image, size: 60),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: Colors.black12,
-                                child: const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            },
-                          )
-                        : Image.asset(
-                            image,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.broken_image, size: 60),
-                              );
-                            },
-                          ),
-                  ),
-                ),
+              Expanded(
+                // 3. Logic Hero Animation
+                // Jika heroTag ada, bungkus dengan Hero. Jika null, tampilkan biasa.
+                child: heroTag != null
+                    ? Hero(
+                        tag: heroTag!,
+                        child: posterContent,
+                      )
+                    : posterContent,
               ),
-              
               const SizedBox(height: 8),
-
               Text(
                 title,
                 textAlign: TextAlign.center,

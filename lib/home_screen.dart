@@ -278,8 +278,12 @@ Future<void> _logHomeScreenOpened() async {
   Widget _buildSharedLayout(Size size, List<dynamic> movies) {
     final isSearching = _searchController.text.isNotEmpty;
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      onRefresh: _fetchNowPlayingMovies, 
+      color: const Color(0xFF7B1113),
+      child: SingleChildScrollView(
       key: const ValueKey('content'),
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -387,15 +391,15 @@ Future<void> _logHomeScreenOpened() async {
                       itemBuilder: (context, index) {
                         final movie =
                             _searchResults[index]; 
+                        // Di dalam GridView.builder
                         return MovieCard(
                           title: movie['title'] ?? 'No Title',
-                          image:
-                              movie['image'] ??
-                              '',
+                          image: movie['image'] ?? '',
                           scale: 1.0,
                           opacity: 1.0,
-                          onTap: () =>
-                              _handleMovieTap(movie), 
+                          // TAMBAHKAN INI:
+                          heroTag: 'movie-poster-${movie['id']}', 
+                          onTap: () => _handleMovieTap(movie),
                         );
                       },
                     ),
@@ -468,8 +472,9 @@ Future<void> _logHomeScreenOpened() async {
                             image: image,
                             scale: 1.0,
                             opacity: 1.0,
-                            onTap: () =>
-                                _handleMovieTap(movie), 
+                            // TAMBAHKAN INI:
+                            heroTag: 'movie-poster-${movie['id']}', 
+                            onTap: () => _handleMovieTap(movie),
                           ),
                         );
                       },
@@ -479,7 +484,9 @@ Future<void> _logHomeScreenOpened() async {
             ),
         ],
       ),
+    )
     );
+    
   }
 
   Widget _getAnimatedBodyContent(Size size, bool isOnline) {

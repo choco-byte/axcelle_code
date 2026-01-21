@@ -142,33 +142,42 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ... kode sebelumnya ...
+
             Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: isLocalAsset
-                    ? Image.asset(
-                        imageUrl,
-                        height: 300,
-                        fit: BoxFit.cover,
-                      )
-                    : Image.network(
-                        imageUrl,
-                        height: 300,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const SizedBox(
-                            height: 300,
-                            child: Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image, size: 300),
-                      ),
+              // TAMBAHKAN WIDGET HERO DI SINI
+              child: Hero(
+                // Tag harus unik per film. Kita gunakan ID film.
+                tag: 'movie-poster-${widget.movie['id']}', 
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: isLocalAsset
+                      ? Image.asset(
+                          imageUrl,
+                          height: 300,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.network(
+                          imageUrl,
+                          height: 300,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const SizedBox(
+                              height: 300,
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.broken_image, size: 300),
+                        ),
+                ),
               ),
             ),
+
+// ... kode selanjutnya ...
 
             const SizedBox(height: 20),
 

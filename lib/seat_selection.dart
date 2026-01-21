@@ -147,168 +147,235 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:
-          AppBar(title: Text('Select Seats - ${widget.movieTitle}')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Text('Choose Your Seat',
-                style:
-                    TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            _buildLegend(),
-            const SizedBox(height: 10),
+      appBar: AppBar(title: Text('Select Seats - ${widget.movieTitle}')),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const Text('Choose Your Seat',
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                _buildLegend(),
+              ],
+            ),
+          ),
 
-            Expanded(
-              child: StreamBuilder<SeatData>(
-                stream: _seatStreamController.stream,
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+          // --- AREA ZOOMABLE DIMULAI DI SINI ---
+          Expanded(
+            child: InteractiveViewer(
+              boundaryMargin: const EdgeInsets.all(100), // Batas area geser
+              minScale: 0.5, // Zoom out maksimal
+              maxScale: 4.0, // Zoom in maksimal
+              child: Center(
+                child: Container(
+                  // Batasi lebar konten agar tidak terlalu melebar saat di-zoom out
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Visual Layar Bioskop (Screen)
+                      Container(
+                        height: 8,
+                        margin: const EdgeInsets.only(bottom: 30),
+                        decoration: BoxDecoration(
+                          color: Colors.blueGrey,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blueAccent.withOpacity(0.5),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            )
+                          ]
+                        ),
+                        width: double.infinity,
+                      ),
+                      
+                      // StreamBuilder ada di dalam InteractiveViewer
+                      StreamBuilder<SeatData>(
+                        stream: _seatStreamController.stream,
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
 
-                  final seatData = snapshot.data!;
-                  const rowCount = 5;
-                  const colCount = 8;
+                          final seatData = snapshot.data!;
+                          const rowCount = 5;
+                          const colCount = 8;
 
-                  return GridView.builder(
-                    itemCount: rowCount * colCount,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: colCount,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                    ),
-                    itemBuilder: (context, index) {
-                      final row = index ~/ colCount;
-                      final col = index % colCount;
-                      final isBooked = seatData.realtimeBooked[row][col];
-                      final isSelected = seatData.userSelected[row][col];
-                      final color =
-                          _getSeatColor(isBooked, isSelected);
-
-                      return GestureDetector(
-                        onTap: () => toggleSeat(row, col),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.black26),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${String.fromCharCode(65 + row)}${col + 1}',
-                              style: TextStyle(
-                                color: isBooked || isSelected
-                                    ? Colors.white
-                                    : Colors.black,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          return GridView.builder(
+                            // PENTING: Matikan scroll GridView agar InteractiveViewer yang bekerja
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: rowCount * colCount,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: colCount,
+                              mainAxisSpacing: 8,
+                              crossAxisSpacing: 8,
                             ),
+                            itemBuilder: (context, index) {
+                              final row = index ~/ colCount;
+                              final col = index % colCount;
+                              final isBooked =
+                                  seatData.realtimeBooked[row][col];
+                              final isSelected =
+                                  seatData.userSelected[row][col];
+                              final color =
+                                  _getSeatColor(isBooked, isSelected);
+
+                              return GestureDetector(
+                                onTap: () => toggleSeat(row, col),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border:
+                                        Border.all(color: Colors.black26),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${String.fromCharCode(65 + row)}${col + 1}',
+                                      style: TextStyle(
+                                        fontSize: 12, // Font size disesuaikan
+                                        color: isBooked || isSelected
+                                            ? Colors.white
+                                            : Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // --- AREA ZOOMABLE BERAKHIR ---
+
+          // Bagian Bawah (Tanggal & Tombol) tetap statis (tidak ikut di-zoom)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                 BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, -5)
+                 )
+              ]
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedDate,
+                        decoration: const InputDecoration(
+                            labelText: 'Date',
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            border: OutlineInputBorder()),
+                        items: availableDates
+                            .map((d) => DropdownMenuItem(
+                                value: d,
+                                child: Text(d, style: const TextStyle(fontSize: 14))))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedDate = value;
+                            _startSeatStream();
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedTime,
+                        decoration: const InputDecoration(
+                            labelText: 'Time',
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            border: OutlineInputBorder()),
+                        items: availableTimes
+                            .map((t) => DropdownMenuItem(
+                                value: t, child: Text(t)))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedTime = value;
+                            _startSeatStream();
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('Confirm Selection'),
+                    style: ElevatedButton.styleFrom(
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 14)),
+                    onPressed: () async {
+                      final selectedSeats = <String>[];
+                      for (int i = 0; i < _userSelectedSeats.length; i++) {
+                        for (int j = 0;
+                            j < _userSelectedSeats[i].length;
+                            j++) {
+                          if (_userSelectedSeats[i][j]) {
+                            selectedSeats.add(
+                                '${String.fromCharCode(65 + i)}${j + 1}');
+                          }
+                        }
+                      }
+
+                      if (selectedSeats.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Please select at least one seat.')),
+                        );
+                        return;
+                      }
+
+                      await _saveTicket(widget.movieTitle, selectedDate!,
+                          selectedTime!, selectedSeats);
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PaymentScreen(
+                            totalPrice: selectedSeats.length * 50000,
+                            movieTitle: widget.movieTitle,
+                            selectedDate: selectedDate!,
+                            selectedTime: selectedTime!,
+                            selectedSeats: selectedSeats,
                           ),
                         ),
                       );
-                    },
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedDate,
-                    decoration: const InputDecoration(
-                        labelText: 'Date',
-                        border: OutlineInputBorder()),
-                    items: availableDates
-                        .map((d) =>
-                            DropdownMenuItem(value: d, child: Text(d)))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedDate = value;
-                        _startSeatStream();
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedTime,
-                    decoration: const InputDecoration(
-                        labelText: 'Time',
-                        border: OutlineInputBorder()),
-                    items: availableTimes
-                        .map((t) =>
-                            DropdownMenuItem(value: t, child: Text(t)))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedTime = value;
-                        _startSeatStream();
-                      });
                     },
                   ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Confirm Selection'),
-                style: ElevatedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 14)),
-                onPressed: () async {
-                  final selectedSeats = <String>[];
-
-                  for (int i = 0; i < _userSelectedSeats.length; i++) {
-                    for (int j = 0; j < _userSelectedSeats[i].length; j++) {
-                      if (_userSelectedSeats[i][j]) {
-                        selectedSeats
-                            .add('${String.fromCharCode(65 + i)}${j + 1}');
-                      }
-                    }
-                  }
-
-                  if (selectedSeats.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Please select at least one seat.')),
-                    );
-                    return;
-                  }
-
-                  await _saveTicket(widget.movieTitle, selectedDate!,
-                      selectedTime!, selectedSeats);
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PaymentScreen(
-                        totalPrice: selectedSeats.length * 50000,
-                        movieTitle: widget.movieTitle,
-                        selectedDate: selectedDate!,
-                        selectedTime: selectedTime!,
-                        selectedSeats: selectedSeats,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
