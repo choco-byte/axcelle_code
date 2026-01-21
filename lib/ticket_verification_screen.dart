@@ -1,67 +1,31 @@
 import 'package:flutter/material.dart';
-import 'notification_service.dart';
-import 'qr_ticket_screen.dart';
 
-class SuccessPaymentScreen extends StatefulWidget {
-  final String movieTitle;
-  final String selectedDate;
-  final String selectedTime;
-  final List<String> selectedSeats;
-  final String paymentMethod;
-  final double totalPrice;
+class TicketVerificationScreen extends StatelessWidget {
+  final Map<String, dynamic> ticketData;
 
-  const SuccessPaymentScreen({
+  const TicketVerificationScreen({
     super.key,
-    required this.movieTitle,
-    required this.selectedDate,
-    required this.selectedTime,
-    required this.selectedSeats,
-    required this.paymentMethod,
-    required this.totalPrice,
+    required this.ticketData,
   });
-
-  @override
-  State<SuccessPaymentScreen> createState() => _SuccessPaymentScreenState();
-}
-
-class _SuccessPaymentScreenState extends State<SuccessPaymentScreen> {
-  bool _notificationSent = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    /// 🔔 Tampilkan notifikasi SETELAH halaman sukses muncul
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_notificationSent) {
-        NotificationService.showTicketSuccess(
-          eventName: widget.movieTitle,
-          ticketCode: widget.selectedSeats.join(', '),
-        );
-        _notificationSent = true;
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Payment Success'),
+        title: const Text('Ticket Verified'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.close),
           onPressed: () {
             Navigator.popUntil(context, (route) => route.isFirst);
           },
         ),
       ),
-      body: SafeArea(
+      body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 20),
               const Icon(
                 Icons.check_circle,
                 color: Colors.green,
@@ -70,7 +34,7 @@ class _SuccessPaymentScreenState extends State<SuccessPaymentScreen> {
               const SizedBox(height: 20),
 
               const Text(
-                "Payment Successful!",
+                "Ticket Verified!",
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -78,7 +42,17 @@ class _SuccessPaymentScreenState extends State<SuccessPaymentScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
+
+              Text(
+                "Entry Approved",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+
+              const SizedBox(height: 30),
 
               Container(
                 padding: const EdgeInsets.all(16),
@@ -97,46 +71,44 @@ class _SuccessPaymentScreenState extends State<SuccessPaymentScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInfoRow(Icons.movie, 'Movie', widget.movieTitle),
+                    _buildInfoRow(Icons.movie, 'Movie', ticketData['movie'] ?? 'N/A'),
                     const SizedBox(height: 12),
-                    _buildInfoRow(Icons.calendar_today, 'Date', widget.selectedDate),
+                    _buildInfoRow(Icons.calendar_today, 'Date', ticketData['date'] ?? 'N/A'),
                     const SizedBox(height: 12),
-                    _buildInfoRow(Icons.access_time, 'Time', widget.selectedTime),
+                    _buildInfoRow(Icons.access_time, 'Time', ticketData['time'] ?? 'N/A'),
                     const SizedBox(height: 12),
-                    _buildInfoRow(Icons.event_seat, 'Seats', widget.selectedSeats.join(', ')),
+                    _buildInfoRow(Icons.event_seat, 'Seats', ticketData['seats'] ?? 'N/A'),
                     const SizedBox(height: 12),
-                    _buildInfoRow(Icons.payment, 'Method', widget.paymentMethod),
+                    _buildInfoRow(Icons.payment, 'Payment', ticketData['payment'] ?? 'N/A'),
                     const SizedBox(height: 14),
                     const Divider(thickness: 1.5),
                     const SizedBox(height: 10),
-                    _buildInfoRow(Icons.attach_money, 'Total', 'Rp${widget.totalPrice.toStringAsFixed(0)}', isTotal: true),
+                    _buildInfoRow(Icons.attach_money, 'Total', 'Rp${ticketData['total'] ?? 'N/A'}', isTotal: true),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Text(
+                        'Ticket ID: ${ticketData['ticketId'] ?? 'N/A'}',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 30),
 
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => QrTicketScreen(
-                          movieTitle: widget.movieTitle,
-                          selectedDate: widget.selectedDate,
-                          selectedTime: widget.selectedTime,
-                          selectedSeats: widget.selectedSeats,
-                          paymentMethod: widget.paymentMethod,
-                          totalPrice: widget.totalPrice,
-                        ),
-                      ),
-                    );
+                    Navigator.pop(context);
                   },
-                  icon: const Icon(Icons.qr_code_2),
+                  icon: const Icon(Icons.qr_code_scanner),
                   label: const Text(
-                    'View QR Ticket',
+                    'Scan Another Ticket',
                     style: TextStyle(fontSize: 18),
                   ),
                   style: ElevatedButton.styleFrom(

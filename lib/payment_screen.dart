@@ -37,7 +37,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Payment Method'),
-        backgroundColor: Colors.deepPurple,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -67,7 +66,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             _selectedMethod = value;
                           });
                         },
-                        activeColor: Colors.deepPurple,
                       ),
                     ),
                   );
@@ -79,7 +77,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.payment),
+                label: const Text('Pay Now'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
                 onPressed: _selectedMethod == null
                     ? null
                     : () {
@@ -97,14 +100,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           ),
                         );
                       },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                child: const Text(
-                  'Pay Now',
-                  style: TextStyle(fontSize: 18),
-                ),
               ),
             ),
           ],

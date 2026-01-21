@@ -5,6 +5,7 @@ import 'notification_service.dart';
 import 'home_screen.dart';
 import 'tickets_all.dart';
 import 'profile.dart';
+import 'qr_scanner_screen.dart';
 
 class Nav extends StatefulWidget {
   @override
@@ -79,6 +80,17 @@ class _NavState extends State<Nav> {
             selectedItemColor: const Color(0xFF7B1113),
             unselectedItemColor: Colors.grey,
           ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+              );
+            },
+            backgroundColor: const Color(0xFF7B1113),
+            child: const Icon(Icons.qr_code_scanner, color: Colors.white),
+          ),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         );
       },
     );
