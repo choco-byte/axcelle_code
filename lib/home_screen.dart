@@ -6,6 +6,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:axcelle_code/components/movie_card.dart';
+import 'package:axcelle_code/components/skeleton_loading.dart';
 import 'package:axcelle_code/all_movies.dart';
 import 'package:axcelle_code/movie_detail_screen.dart';
 
@@ -496,7 +497,7 @@ Future<void> _logHomeScreenOpened() async {
         : _localMovies;
 
     if (_isLoading) {
-      return const CircularProgressIndicator(key: ValueKey('loading'));
+      return const MovieCarouselSkeleton(key: ValueKey('loading'));
     }
 
     if (!isOnline && _nowPlayingMovies.isEmpty && _localMovies.isNotEmpty) {

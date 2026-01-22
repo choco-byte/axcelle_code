@@ -15,73 +15,60 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDb() async {
-    String path = join(await getDatabasesPath(), 'movie_app.db');
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
-  }
-
-  void _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE movies(
-        id INTEGER PRIMARY KEY,
-        title TEXT,
-        overview TEXT,
-        poster_path TEXT,
-        vote_average REAL,
-        release_date TEXT,
-        is_showing INTEGER
-      )
-    ''');
-    await db.execute('''
-      CREATE TABLE watchlist(
-        id INTEGER PRIMARY KEY,
-        title TEXT,
-        poster_path TEXT
-      )
-    ''');
-  }
-
-  Future<void> cacheMovies(
-    List<Map<String, dynamic>> movies,
-    bool isNowPlaying,
-  ) async {
-    final db = await database;
-    final batch = db.batch();
-    await batch.commit(noResult: true);
-  }
-
-  Future<void> addToWatchlist(Map<String, dynamic> movieData) async {
-    final db = await database; 
-    await db.insert('watchlist', {
-      'id': movieData['id'],
-      'title': movieData['title'],
-      'poster_path': movieData['poster_path'],
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
-  }
-
-  Future<bool> isMovieInWatchlist(int movieId) async {
-    final db = await database; 
-    final List<Map<String, dynamic>> maps = await db.query(
-      'watchlist',
-      where: 'id = ?',
-      whereArgs: [movieId],
+    String path = join(await getDatabasesPath(), 'movie_app_ultimate.db');
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('CREATE TABLE watchlist(id INTEGER PRIMARY KEY, title TEXT, poster_path TEXT)');
+        await db.execute('CREATE TABLE reviews(id INTEGER PRIMARY KEY AUTOINCREMENT, movie_id INTEGER, user_name TEXT, rating REAL, comment TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)');
+      },
     );
-    return maps.isNotEmpty;
   }
 
-  Future<void> removeFromWatchlist(int movieId) async {
-    final db = await database; 
-    await db.delete('watchlist', where: 'id = ?', whereArgs: [movieId]);
-    print('Film ID $movieId dihapus dari watchlist.');
+  // --- WATCHLIST ---
+  Future<void> addToWatchlist(Map<String, dynamic> movie) async {
+    final db = await database;
+    await db.insert('watchlist', movie, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> removeFromWatchlist(int id) async {
+    final db = await database;
+    await db.delete('watchlist', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<bool> isMovieInWatchlist(int id) async {
+    final db = await database;
+    final res = await db.query('watchlist', where: 'id = ?', whereArgs: [id]);
+    return res.isNotEmpty;
   }
 
   Future<List<Map<String, dynamic>>> getWatchlist() async {
-    final db =
-        await database; 
+    final db = await database;
+    return await db.query('watchlist');
+  }
 
-    final List<Map<String, dynamic>> maps = await db.query('watchlist');
+  // --- REVIEWS ---
+  Future<void> insertReview(Map<String, dynamic> data) async {
+    final db = await database;
+    Map<String, dynamic> cleanData = Map.from(data);
+    cleanData['movie_id'] = int.tryParse(data['movie_id'].toString()) ?? 0;
+    // Membolehkan comment kosong
+    cleanData['comment'] = (cleanData['comment'] ?? "").toString().trim();
+    await db.insert('reviews', cleanData);
+  }
 
-    return maps;
+  Future<List<Map<String, dynamic>>> getReviewsByMovie(dynamic movieId) async {
+    final db = await database;
+    final intId = int.tryParse(movieId.toString()) ?? 0;
+    return await db.query('reviews', where: 'movie_id = ?', whereArgs: [intId], orderBy: 'timestamp DESC');
+  }
+
+  Future<bool> hasUserRated(dynamic movieId, String userName) async {
+    final db = await database;
+    final intId = int.tryParse(movieId.toString()) ?? 0;
+    final result = await db.query('reviews', where: 'movie_id = ? AND user_name = ? AND rating > 0', whereArgs: [intId, userName]);
+    return result.isNotEmpty;
   }
 }
-
 final dbHelper = DatabaseHelper();
