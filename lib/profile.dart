@@ -172,7 +172,6 @@ class _MyAccountPageState extends State<MyAccountPage> {
 
           const Divider(),
 
-          // 🔹 WATCHLIST
           ListTile(
             leading: const Icon(Icons.bookmark, color: Colors.blue),
             title: const Text('My Watchlist'),
@@ -190,7 +189,6 @@ class _MyAccountPageState extends State<MyAccountPage> {
 
           const SizedBox(height: 40),
 
-          // 🔹 LOGOUT
           Center(
             child: ElevatedButton.icon(
               onPressed: _logout,

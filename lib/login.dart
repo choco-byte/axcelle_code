@@ -39,7 +39,6 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = userCredential.user;
 
       if (user != null) {
-        // 🔥 CREATE / UPDATE USER IN FIRESTORE
         await _firestore.collection('users').doc(user.uid).set({
           'email': user.email ?? '',
           'displayName': user.displayName ?? 'User',

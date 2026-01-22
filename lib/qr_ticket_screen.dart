@@ -229,7 +229,6 @@ class _QrTicketScreenState extends State<QrTicketScreen> {
 
             const SizedBox(height: 30),
 
-            // Action Buttons
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(

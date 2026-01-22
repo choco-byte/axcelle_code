@@ -16,16 +16,13 @@ void main() async {
 
   await Firebase.initializeApp();
 
-  // ADMOB
   await MobileAds.instance.initialize();
 
-  // ANALYTICS
   await FirebaseAnalytics.instance.logEvent(
     name: 'app_start',
     parameters: {'success': 'true'},
   );
 
-  // 🔔 INIT NOTIFICATION
   await NotificationService.init();
 
   runApp(const MyApp());

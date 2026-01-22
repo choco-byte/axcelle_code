@@ -28,14 +28,12 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     try {
       final data = json.decode(rawValue) as Map<String, dynamic>;
 
-      // Navigate to verification screen
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => TicketVerificationScreen(ticketData: data),
         ),
       ).then((_) {
-        // Reset processing state when returning
         setState(() => _isProcessing = false);
       });
     } catch (e) {
@@ -83,7 +81,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             painter: ScannerOverlay(),
             child: Container(),
           ),
-          // Instructions
           Positioned(
             bottom: 100,
             left: 0,
@@ -122,7 +119,6 @@ class ScannerOverlay extends CustomPainter {
     final left = (size.width - scanAreaSize) / 2;
     final top = (size.height - scanAreaSize) / 2;
 
-    // Draw overlay with transparent square
     final path = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
       ..addRRect(RRect.fromRectAndRadius(

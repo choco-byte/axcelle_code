@@ -5,7 +5,6 @@ class NotificationService {
       _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  /// INIT NOTIFICATION
   static Future<void> init() async {
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -16,7 +15,6 @@ class NotificationService {
     await _flutterLocalNotificationsPlugin.initialize(settings);
   }
 
-  /// 🎟️ NOTIFIKASI TIKET BERHASIL
   static Future<void> showTicketSuccess({
     required String eventName,
     required String ticketCode,
@@ -36,8 +34,8 @@ class NotificationService {
 
     await _flutterLocalNotificationsPlugin.show(
       1,
-      'Pembelian Berhasil 🎉',
-      'Tiket $eventName berhasil dibeli\nKode: $ticketCode',
+      'Purchase Successful 🎉',
+      'Your ticket for $eventName has been successfully purchased.\nCode: $ticketCode',
       notificationDetails,
     );
   }

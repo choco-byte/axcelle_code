@@ -32,7 +32,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 🔐 CREATE ACCOUNT
       final UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -42,12 +41,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final user = userCredential.user;
 
       if (user != null) {
-        // 👤 UPDATE DISPLAY NAME (AUTH)
         await user.updateDisplayName(
           _usernameController.text.trim(),
         );
 
-        // 🔥 SAVE USER TO FIRESTORE
         await _firestore.collection('users').doc(user.uid).set({
           'username': _usernameController.text.trim(),
           'email': user.email ?? '',
