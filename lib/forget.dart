@@ -73,7 +73,6 @@ class ForgetScreen extends StatelessWidget {
                       minimumSize: const Size(double.infinity, 44),
                     ),
                     onPressed: () {
-                      // Submit reset
                     },
                     child: const Text(
                       'Send',
@@ -85,7 +84,7 @@ class ForgetScreen extends StatelessWidget {
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.pop(context); // kembali ke halaman login
+                        Navigator.pop(context); 
                       },
                       child: const Text(
                         'Back to Login',

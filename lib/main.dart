@@ -1,13 +1,30 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:axcelle_code/login.dart';
-import 'package:axcelle_code/navigator.dart';
-import 'package:axcelle_code/theme_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login.dart';
+import 'navigator.dart';
+import 'theme_service.dart';
+import 'notification_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+
+  await MobileAds.instance.initialize();
+
+  await FirebaseAnalytics.instance.logEvent(
+    name: 'app_start',
+    parameters: {'success': 'true'},
+  );
+
+  await NotificationService.init();
+
   runApp(const MyApp());
 }
 
@@ -19,42 +36,29 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late final Future<bool> _isLoggedInFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _isLoggedInFuture = _checkLoginStatus();
-  }
-
-  Future<bool> _checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('isLoggedIn') ?? false;
-  }
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<bool>(
       stream: themeService.themeStream,
       initialData: false,
-      builder: (context, themeSnapshot) {
-        final isDarkMode = themeSnapshot.data ?? false;
+      builder: (context, snapshot) {
+        final isDark = snapshot.data ?? false;
 
         return MaterialApp(
-          title: 'Eclipse',
+          title: 'Firebase Auth Demo',
           debugShowCheckedModeBanner: false,
           navigatorKey: navigatorKey,
-          theme: isDarkMode ? _buildDarkTheme() : _buildLightTheme(),
-          home: FutureBuilder<bool>(
-            future: _isLoggedInFuture,
-            builder: (context, loginSnapshot) {
-              if (loginSnapshot.connectionState == ConnectionState.waiting) {
+          theme: isDark ? _buildDarkTheme() : _buildLightTheme(),
+          home: StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Scaffold(
                   body: Center(child: CircularProgressIndicator()),
                 );
               }
 
-              if (loginSnapshot.data == true) {
+              if (snapshot.hasData) {
                 return Nav();
               } else {
                 return const LoginScreen();
@@ -69,34 +73,14 @@ class _MyAppState extends State<MyApp> {
 
 ThemeData _buildLightTheme() {
   const Color primaryColor = Color(0xFF7B1113);
-
   return ThemeData.light().copyWith(
-    colorScheme: ColorScheme.light().copyWith(
+    colorScheme: const ColorScheme.light(
       primary: primaryColor,
       secondary: primaryColor,
-      surface: Colors.white,
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: primaryColor,
       foregroundColor: Colors.white,
-    ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      selectedItemColor: primaryColor,
-      unselectedItemColor: Colors.grey,
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-      ),
-    ),
-    checkboxTheme: CheckboxThemeData(
-      fillColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return primaryColor;
-        }
-        return null;
-      }),
     ),
   );
 }
@@ -107,13 +91,13 @@ ThemeData _buildDarkTheme() {
   const Color darkSurface = Color(0xFF2C2C2C);
 
   return ThemeData.dark().copyWith(
+    scaffoldBackgroundColor: darkBackground,
     colorScheme: const ColorScheme.dark(
       primary: primaryColor,
       secondary: primaryColor,
       surface: darkSurface,
       onSurface: Color(0xFFE0E0E0),
     ),
-    scaffoldBackgroundColor: darkBackground,
     appBarTheme: const AppBarTheme(
       backgroundColor: darkBackground,
       foregroundColor: Color(0xFFE0E0E0),
@@ -122,24 +106,6 @@ ThemeData _buildDarkTheme() {
       backgroundColor: darkBackground,
       selectedItemColor: primaryColor,
       unselectedItemColor: Color(0xFFB0B0B0),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-      ),
-    ),
-    checkboxTheme: CheckboxThemeData(
-      fillColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return primaryColor;
-        }
-        return null;
-      }),
-      checkColor: WidgetStateProperty.all(Colors.white),
-    ),
-    cardTheme: const CardThemeData(
-      color: darkSurface,
     ),
   );
 }

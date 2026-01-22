@@ -1,30 +1,11 @@
-import 'package:axcelle_code/forget.dart';
-import 'package:axcelle_code/navigator.dart';
-import 'package:axcelle_code/register.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
-  runApp(MyApp(isLoggedIn: isLoggedIn));
-}
-
-class MyApp extends StatelessWidget {
-  final bool isLoggedIn;
-  const MyApp({super.key, required this.isLoggedIn});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: isLoggedIn ? Nav() : LoginScreen(),
-    );
-  }
-}
+import 'package:axcelle_code/navigator.dart';
+import 'package:axcelle_code/register.dart';
+import 'package:axcelle_code/forget.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,24 +16,83 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  bool _staySignedIn = false;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  Future<void> _login() async {
-    if (_formKey.currentState!.validate()) {
-      final prefs = await SharedPreferences.getInstance();
+  bool _isLoading = false;
 
-      if (_staySignedIn) {
-        await prefs.setBool('isLoggedIn', true);
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final UserCredential userCredential =
+          await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      final user = userCredential.user;
+
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).set({
+          'email': user.email ?? '',
+          'displayName': user.displayName ?? 'User',
+          'photoUrl': user.photoURL ?? '',
+          'lastLogin': FieldValue.serverTimestamp(),
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Nav()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Login failed.';
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No user found with that email. Please register first.';
+          break;
+        case 'wrong-password':
+          message = 'Incorrect password.';
+          break;
+        case 'invalid-email':
+          message = 'Invalid email format.';
+          break;
+        case 'user-disabled':
+          message = 'This account has been disabled.';
+          break;
+        default:
+          message = 'Unexpected error: ${e.message}';
       }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => Nav()),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -103,101 +143,88 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 25),
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('Email', style: TextStyle(fontSize: 14)),
-                        ),
+
+                        const Text('Email'),
                         TextFormField(
                           controller: _emailController,
                           decoration: const InputDecoration(
                             prefixIcon: Icon(Icons.person),
-                            hintText: 'Enter email',
+                            hintText: 'Enter your email',
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Email is required';
-                            } else if (!value.endsWith('@gmail.com')) {
-                              return 'Email must end with @gmail.com';
+                            } else if (!value.contains('@')) {
+                              return 'Enter a valid email';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 15),
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('Password', style: TextStyle(fontSize: 14)),
-                        ),
+
+                        const Text('Password'),
                         TextFormField(
                           controller: _passwordController,
                           obscureText: true,
                           decoration: const InputDecoration(
                             prefixIcon: Icon(Icons.lock),
-                            hintText: 'Enter password',
+                            hintText: 'Enter your password',
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Password is required';
+                            } else if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _staySignedIn,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _staySignedIn = value!;
-                                    });
-                                  },
+
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ForgetScreen(),
                                 ),
-                                const Text('Stay signed in'),
-                              ],
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ForgetScreen(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'Forgot Password?',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ),
-                          ],
+                              );
+                            },
+                            child: const Text('Forgot Password?'),
+                          ),
                         ),
+
                         const SizedBox(height: 10),
+
                         SizedBox(
                           width: double.infinity,
                           height: 45,
                           child: ElevatedButton(
+                            onPressed: _isLoading ? null : _login,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF641717),
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
                             ),
-                            onPressed: _login,
-                            child: const Text(
-                              'LOGIN',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    'LOGIN',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 15),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -209,7 +236,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => RegisterScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
                         );
                       },
                       child: const Text(
@@ -217,13 +246,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
               ],
             ),
           ),
